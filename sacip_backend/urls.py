@@ -63,3 +63,7 @@ urlpatterns = [
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Serve static files in both development and production
+# This is needed for drf-yasg and other static assets
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

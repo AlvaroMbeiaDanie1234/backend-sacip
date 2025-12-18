@@ -33,14 +33,18 @@ def osint_search(request):
         serp_response.raise_for_status()
         serp_data = serp_response.json()
 
-        # Print raw SerpAPI result to console for debugging
         print('Resultado da pesquisa SerpAPI:', serp_data)
 
-        # Format response for frontend
+        images_results = (
+            serp_data.get('images_results', []) or 
+            serp_data.get('inline_images', []) or 
+            []
+        )
+
         formatted_response = {
             'success': True,
             'results': serp_data.get('organic_results', []),
-            'images': serp_data.get('inline_images', []),
+            'images': images_results,  # Using the corrected images data
             'total': serp_data.get('search_information', {}).get('total_results', 0),
             'query': serp_data.get('search_information', {}).get('query_displayed', query),
         }

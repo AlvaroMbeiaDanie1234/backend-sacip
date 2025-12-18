@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'configuracoes',
     'invasao',
     'analise_de_media_e_osint',
+    'servico_rss',
 ]
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

@@ -4,8 +4,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
-from .models import User, Role
-from .serializers import UserSerializer, UserRegistrationSerializer, LoginSerializer, RoleSerializer
+from .models import User, Role, OrganizationalUnit
+from .serializers import UserSerializer, UserRegistrationSerializer, LoginSerializer, RoleSerializer, OrganizationalUnitSerializer
 
 
 @api_view(['POST'])
@@ -16,6 +16,16 @@ def register_user(request):
     """
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
+        # Check if organizational unit exists
+        org_unit_id = request.data.get('organizational_unit')
+        if org_unit_id:
+            try:
+                org_unit = OrganizationalUnit.objects.get(id=org_unit_id)
+            except OrganizationalUnit.DoesNotExist:
+                return Response({
+                    'error': 'Organizational unit not found'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
         return Response({
@@ -51,15 +61,32 @@ def login_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
 def logout_user(request):
     """
     Logout a user by deleting their token
     """
     try:
-        request.user.auth_token.delete()
+        # Check if user has an auth token before trying to delete it
+        if hasattr(request.user, 'auth_token'):
+            request.user.auth_token.delete()
         return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
-    except:
-        return Response({'error': 'Error logging out'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        # Log the error but still return success to prevent hanging
+        print(f"Logout error: {str(e)}")
+        # Still clear local storage on client side
+        return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def list_organizational_units(request):
+    """
+    List all organizational units
+    """
+    org_units = OrganizationalUnit.objects.all()
+    serializer = OrganizationalUnitSerializer(org_units, many=True)
+    return Response(serializer.data)
 
 
 class UserListView(generics.ListCreateAPIView):
@@ -86,7 +113,7 @@ class RoleListView(generics.ListCreateAPIView):
     """
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
 
 class RoleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -95,4 +122,4 @@ class RoleDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]

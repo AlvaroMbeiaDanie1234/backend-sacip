@@ -54,7 +54,8 @@ urlpatterns = [
     path('api/relatorios/', include('relatorios.urls')),
     path('api/configuracoes/', include('configuracoes.urls')),
     path('api/invasao/', include('invasao.urls')),
-    path('api/analise-de-media-e-osint/', include('analise_de_media_e_osint.urls')),    
+    path('api/analise-de-media-e-osint/', include('analise_de_media_e_osint.urls')),
+    path('api/rss/', include('servico_rss.urls')),
     # Swagger documentation
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

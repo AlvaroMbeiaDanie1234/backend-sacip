@@ -3,12 +3,41 @@ from users.models import OrganizationalUnit
 import json
 from datetime import datetime
 
+
 class Command(BaseCommand):
     help = 'Seed organizational units data'
 
     def handle(self, *args, **options):
         # Data from the user's request
         org_units_data = [
+            {
+                "id": 5,
+                "user_id": 1,
+                "core_service_id": null,
+                "name": "Direcção de Informações Policias",
+                "slug": "DINFOP",
+                "description": "Criado automaticamente pelo sistema.",
+                "active": 1,
+                "deleted_at": null,
+                "created_at": "2025-11-07T15:40:14.000Z",
+                "updated_at": "2025-11-07T15:40:14.000Z",
+                "createdAt": "07/11/2025 15:40:14",
+                "updatedAt": "07/11/2025 15:40:14"
+            },
+            {
+                "id": 6,
+                "user_id": 1,
+                "core_service_id": null,
+                "name": "Direcção de Investigação de Ilícitos Penais",
+                "slug": "DIIP",
+                "description": "Criado automaticamente pelo sistema.",
+                "active": 1,
+                "deleted_at": null,
+                "created_at": "2025-11-07T15:40:15.000Z",
+                "updated_at": "2025-11-07T15:40:15.000Z",
+                "createdAt": "07/11/2025 15:40:15",
+                "updatedAt": "07/11/2025 15:40:15"
+            },
             {
                 "id": 68,
                 "user_id": 1,
@@ -327,9 +356,11 @@ class Command(BaseCommand):
         created_count = 0
         for unit_data in org_units_data:
             # Parse datetime strings
-            created_at = datetime.strptime(unit_data['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            updated_at = datetime.strptime(unit_data['updated_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            
+            created_at = datetime.strptime(
+                unit_data['created_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            updated_at = datetime.strptime(
+                unit_data['updated_at'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
             # Create or update the organizational unit
             org_unit, created = OrganizationalUnit.objects.update_or_create(
                 id=unit_data['id'],
@@ -345,12 +376,14 @@ class Command(BaseCommand):
                     'updated_at': updated_at,
                 }
             )
-            
+
             if created:
                 created_count += 1
-                self.stdout.write(f'Created organizational unit: {org_unit.name}')
+                self.stdout.write(
+                    f'Created organizational unit: {org_unit.name}')
             else:
-                self.stdout.write(f'Updated organizational unit: {org_unit.name}')
+                self.stdout.write(
+                    f'Updated organizational unit: {org_unit.name}')
 
         self.stdout.write(
             self.style.SUCCESS(

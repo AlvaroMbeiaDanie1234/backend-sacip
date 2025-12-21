@@ -51,6 +51,9 @@ O projeto segue uma arquitetura limpa (clean architecture) e está organizado em
    python manage.py createsuperuser
    ```
 
+
+   python manage.py seed_organizational_units
+
 5. Executar servidor de desenvolvimento:
    ```
    python manage.py runserver

@@ -1,13 +1,28 @@
 from django.urls import path
-from .views import ConfiguracaoSistemaListCreateView, ConfiguracaoSistemaRetrieveUpdateDestroyView, AuditoriaListCreateView, AuditoriaRetrieveUpdateDestroyView, NotificacaoListCreateView, NotificacaoRetrieveUpdateDestroyView, PermissaoCustomizadaListCreateView, PermissaoCustomizadaRetrieveUpdateDestroyView
+from . import views
 
 urlpatterns = [
-    path('configuracoes/', ConfiguracaoSistemaListCreateView.as_view(), name='configuracao-sistema-list-create'),
-    path('configuracoes/<int:pk>/', ConfiguracaoSistemaRetrieveUpdateDestroyView.as_view(), name='configuracao-sistema-detail'),
-    path('auditorias/', AuditoriaListCreateView.as_view(), name='auditoria-list-create'),
-    path('auditorias/<int:pk>/', AuditoriaRetrieveUpdateDestroyView.as_view(), name='auditoria-detail'),
-    path('notificacoes/', NotificacaoListCreateView.as_view(), name='notificacao-list-create'),
-    path('notificacoes/<int:pk>/', NotificacaoRetrieveUpdateDestroyView.as_view(), name='notificacao-detail'),
-    path('permissoes-customizadas/', PermissaoCustomizadaListCreateView.as_view(), name='permissao-customizada-list-create'),
-    path('permissoes-customizadas/<int:pk>/', PermissaoCustomizadaRetrieveUpdateDestroyView.as_view(), name='permissao-customizada-detail'),
+    # Configurações do Sistema
+    path('sistema/', views.ConfiguracaoSistemaListView.as_view(), name='configuracao-sistema-list'),
+    path('sistema/<int:pk>/', views.ConfiguracaoSistemaDetailView.as_view(), name='configuracao-sistema-detail'),
+
+    # Configurações do Usuário
+    path('usuarios/', views.ConfiguracaoUsuarioListView.as_view(), name='configuracao-usuario-list'),
+    path('usuarios/<int:pk>/', views.ConfiguracaoUsuarioDetailView.as_view(), name='configuracao-usuario-detail'),
+
+    # Configurações Gerais
+    path('gerais/', views.ConfiguracaoListView.as_view(), name='configuracao-list'),
+    path('gerais/<int:pk>/', views.ConfiguracaoDetailView.as_view(), name='configuracao-detail'),
+
+    # Dicionário de Termos Ofensivos
+    path('termos-ofensivos/', views.TermoOfensivoListView.as_view(), name='termo-ofensivo-list'),
+    path('termos-ofensivos/<int:pk>/', views.TermoOfensivoDetailView.as_view(), name='termo-ofensivo-detail'),
+    path('termos-ofensivos/public/', views.get_termos_ofensivos_public, name='termos-ofensivos-public'),
+    path('termos-ofensivos/severidade/', views.get_termos_ofensivos_by_severity, name='termos-ofensivos-by-severity'),
+    
+    # Mock endpoints for testing
+    path('termos-ofensivos-mock/', views.get_termos_ofensivos_mock, name='termos-ofensivos-mock'),
+    path('termos-ofensivos-mock/create/', views.create_termo_ofensivo_mock, name='termos-ofensivos-create-mock'),
+    path('termos-ofensivos-mock/<int:pk>/update/', views.update_termo_ofensivo_mock, name='termos-ofensivos-update-mock'),
+    path('termos-ofensivos-mock/<int:pk>/delete/', views.delete_termo_ofensivo_mock, name='termos-ofensivos-delete-mock'),
 ]

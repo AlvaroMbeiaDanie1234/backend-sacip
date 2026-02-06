@@ -16,7 +16,8 @@ from .views import (
     add_google_alert,
     criar_alerta_monitoramento,
     buscar_resultados_alerta,
-    buscar_todos_alertas_resultados
+    buscar_todos_alertas_resultados,
+    get_nossa_comunidade_users
 )
 
 urlpatterns = [
@@ -45,4 +46,5 @@ urlpatterns = [
     path('alertas-monitoramento/criar/', criar_alerta_monitoramento, name='criar-alerta-monitoramento'),
     path('alertas-monitoramento/<int:alerta_id>/buscar-resultados/', buscar_resultados_alerta, name='buscar-resultados-alerta'),
     path('alertas-monitoramento/buscar-todos-resultados/', buscar_todos_alertas_resultados, name='buscar-todos-alertas-resultados'),
+    path('nossa-comunidade/users/', get_nossa_comunidade_users, name='nossa-comunidade-users'),
 ]

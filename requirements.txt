@@ -28,3 +28,5 @@ requests[socks]==2.32.3
 # undetected-chromedriver==3.5.5  # Removed due to Python 3.12+ distutils removal
 # Using zendriver as a modern replacement
 zendriver>=0.15.0
+firebase-admin>=6.5.0
+google-cloud-firestore>=2.15.0

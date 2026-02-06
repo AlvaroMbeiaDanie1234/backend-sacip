@@ -1,10 +1,11 @@
 from rest_framework import generics, permissions
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PerfilRedeSocial, Postagem, AlertaMonitoramento
 from .serializers import PerfilRedeSocialSerializer, PostagemSerializer, AlertaMonitoramentoSerializer
 from .scraper import SocialMediaScraperService
+from alvos_sob_investigacao.firestore_utils import get_firestore_collection
 from django.db.models import Prefetch
 import requests
 from bs4 import BeautifulSoup
@@ -319,5 +320,43 @@ def buscar_todos_alertas_resultados(request):
         alertas.update(data_ultima_verificacao=datetime.now())
         
         return Response(resultados_completos, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def get_nossa_comunidade_users(request):
+    """
+    Get users from Firestore 'users' collection for the 'Nossa Comunidade' section.
+    """
+    try:
+        users = get_firestore_collection('users')
+        
+        # Format the users to match the frontend requirements
+        formatted_users = []
+        for user in users:
+            formatted_user = {
+                'id': user.get('id'),
+                'nome': user.get('nome', ''),
+                'email': user.get('email', ''),
+                'fotoPerfil': user.get('fotoPerfil', ''),
+                'bio': user.get('bio', ''),
+                'morada': user.get('morada', ''),
+                'dataNascimento': user.get('dataNascimento', ''),
+                'lastActive': user.get('lastActive', ''),
+                'fcmToken': user.get('fcmToken', ''),
+                'telefone': user.get('telefone', ''),
+                'photos': user.get('photos', []),
+                'statuses': user.get('statuses', [])
+            }
+            formatted_users.append(formatted_user)
+        
+        return Response({
+            'success': True,
+            'collection': 'users',
+            'count': len(formatted_users),
+            'data': formatted_users
+        }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

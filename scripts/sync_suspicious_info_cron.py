@@ -137,10 +137,8 @@ def sync_suspicious_info():
                     # Try to find existing suspect by full name, using filter to avoid multiple results
                     suspects_with_name = Suspect.objects.filter(full_name=full_name)
                     if suspects_with_name.exists():
-                        # Get the first suspect if multiple exist
                         suspect = suspects_with_name.first()
                     else:
-                        # Create a new suspect if not found
                         suspect = Suspect.objects.create(
                             full_name=full_name,
                             nickname=info_data.get('nickname', ''),
@@ -148,33 +146,26 @@ def sync_suspicious_info():
                             dangerous_color=info_data.get('dangerous_color', '')
                         )
                 
-                # Download photo if available and not already processed
                 photo_path = None
                 if photo_url:
-                    # Check if this suspicious info already exists in the database
                     existing_info = InformacaoSuspeita.objects.filter(id=info_data.get('id')).first()
                     if existing_info and existing_info.photo:
-                        # Check if the photo file actually exists on disk
                         photo_file_path = Path(settings.MEDIA_ROOT) / str(existing_info.photo)
                         if photo_file_path.exists():
-                            # Photo already exists on disk, skip downloading
                             print(f'Skipping download for {title} - photo already exists')
                             photo_path = existing_info.photo
                         else:
-                            # Photo record exists but file doesn't exist, re-download
                             print(f'Re-downloading photo for {title} - file missing from disk')
                             filename = f"info_{info_data.get('id', i+1)}_{full_name.replace(' ', '_')}" if info_data.get('id') else f"info_{i+1}_{full_name.replace(' ', '_')}"
                             filename = "".join(c for c in filename if c.isalnum() or c in "._- ")
                             photo_path = download_image_from_url(photo_url, filename, MEDIA_ROOT)
                     else:
-                        # Create a filename based on the info ID or full name
                         filename = f"info_{info_data.get('id', i+1)}_{full_name.replace(' ', '_')}" if info_data.get('id') else f"info_{i+1}_{full_name.replace(' ', '_')}"
                         filename = "".join(c for c in filename if c.isalnum() or c in "._- ")
                         photo_path = download_image_from_url(photo_url, filename, MEDIA_ROOT)
                 
-                # Create or update the suspicious information record
                 informacao_suspeita, created = InformacaoSuspeita.objects.get_or_create(
-                    id=info_data.get('id', i+1),  # Use external ID if available
+                    id=info_data.get('id', i+1),
                     defaults={
                         'titulo': title,
                         'descricao': description,
@@ -185,16 +176,13 @@ def sync_suspicious_info():
                     }
                 )
                 
-                # Update fields that might have changed
                 informacao_suspeita.titulo = title
                 informacao_suspeita.descricao = description
                 informacao_suspeita.fonte = source
                 informacao_suspeita.nivel_confianca = info_data.get('level', 1)
                 informacao_suspeita.suspect = suspect
                 
-                # Set the photo if we successfully downloaded it
                 if photo_path:
-                    # We need to save the relative path to the photo field
                     informacao_suspeita.photo = photo_path
                 
                 informacao_suspeita.save()

@@ -2,10 +2,113 @@ import logging
 import uuid
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .models import AlvoInvestigacao
 from .serializers import AlvoInvestigacaoSerializer
+from .firebase_utils import get_firebase_data, get_firebase_record, search_firebase_data, get_multiple_firebase_paths
+from .firestore_utils import get_firestore_collection, get_firestore_document, query_firestore_collection
+
+
+class FirebaseDataView(APIView):
+    """
+    View to retrieve data from Firebase Realtime Database.
+    Provides endpoints to fetch data from Firebase and return it to the frontend.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """
+        Retrieve data from Firebase based on the path provided in query parameters.
+        Usage: GET /firebase-data/?path=/suspects
+        """
+        path = request.query_params.get('path', '/')
+        if not path:
+            path = '/'
+        
+        try:
+            data = get_firebase_data(path)
+            return Response({
+                'success': True,
+                'path': path,
+                'data': data
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    def post(self, request):
+        """
+        Perform various operations on Firebase data based on the action specified.
+        Actions supported:
+        - 'get': Get data from a specific path
+        - 'search': Search data with query parameters
+        - 'get_multiple': Get data from multiple paths
+        """
+        action = request.data.get('action', 'get')
+        path = request.data.get('path', '/')
+        
+        try:
+            if action == 'get':
+                if 'record_id' in request.data:
+                    record_id = request.data.get('record_id')
+                    data = get_firebase_record(path, record_id)
+                    return Response({
+                        'success': True,
+                        'action': action,
+                        'path': f"{path}/{record_id}",
+                        'data': data
+                    })
+                else:
+                    data = get_firebase_data(path)
+                    return Response({
+                        'success': True,
+                        'action': action,
+                        'path': path,
+                        'data': data
+                    })
+            
+            elif action == 'search':
+                query_params = request.data.get('query_params', {})
+                data = search_firebase_data(path, query_params)
+                return Response({
+                    'success': True,
+                    'action': action,
+                    'path': path,
+                    'query_params': query_params,
+                    'data': data
+                })
+            
+            elif action == 'get_multiple':
+                paths = request.data.get('paths', [])
+                if not paths:
+                    return Response({
+                        'success': False,
+                        'error': 'Paths list is required for get_multiple action'
+                    }, status=400)
+                
+                data = get_multiple_firebase_paths(paths)
+                return Response({
+                    'success': True,
+                    'action': action,
+                    'paths': paths,
+                    'data': data
+                })
+            
+            else:
+                return Response({
+                    'success': False,
+                    'error': f"Unsupported action: {action}. Supported actions: get, search, get_multiple"
+                }, status=400)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
 
 
 class AlvoInvestigacaoListCreateView(generics.ListCreateAPIView):
@@ -20,7 +123,8 @@ class AlvoInvestigacaoRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAP
     permission_classes = [permissions.IsAuthenticated]
 
 
-from rest_framework.views import APIView
+from .email_utils import send_target_investigation_email, send_test_email
+from .sms_utils import send_sms_message, send_test_sms
 
 class AlvoInvestigacaoUpdateDocumentoView(APIView):
     permission_classes = []  # Allow unauthenticated access
@@ -62,6 +166,56 @@ class AlvoInvestigacaoUpdateDocumentoView(APIView):
             return Response({'error': str(e)}, status=500)
 
 
+class SendTargetSmsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, pk):
+        try:
+            # Get the target instance
+            target = AlvoInvestigacao.objects.get(pk=pk)
+            
+            # Get recipient phone number and message from request
+            recipient_phone = request.data.get('recipient_phone')
+            message_body = request.data.get('message', '')
+            
+            # If no phone number provided in request, try to get it from the target record
+            if not recipient_phone:
+                recipient_phone = getattr(target, 'telefone', None)
+            
+            if not recipient_phone:
+                return Response({'error': 'Recipient phone number is required'}, status=400)
+            
+            # Send SMS about the target
+            success, result = send_sms_message(recipient_phone, message_body)
+            
+            if success:
+                return Response({'message': f'SMS sent successfully to {recipient_phone}'})
+            else:
+                return Response({'error': 'Failed to send SMS', 'details': result}, status=500)
+        
+        except AlvoInvestigacao.DoesNotExist:
+            return Response({'error': 'Target not found'}, status=404)
+        except Exception as e:
+            logging.exception(f"Error sending SMS for target {pk}: {str(e)}")
+            return Response({'error': str(e)}, status=500)
+
+
+class SendTestSmsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Send test SMS
+            success, result = send_test_sms()
+            
+            if success:
+                return Response({'message': 'Test SMS sent successfully'})
+            else:
+                return Response({'error': 'Failed to send test SMS', 'details': result}, status=500)
+        
+        except Exception as e:
+            logging.exception(f"Error sending test SMS: {str(e)}")
+            return Response({'error': str(e)}, status=500)
 from informacoes_suspeitas.models import InformacaoSuspeita
 from facial_recognition.models import Suspect
 
@@ -136,3 +290,158 @@ class AddSuspectAsTargetView(APIView):
         except Exception as e:
             logging.exception(f"Error adding suspect as target: {str(e)}")
             return Response({'error': str(e)}, status=500)
+
+
+class SendTargetEmailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, pk):
+        try:
+            # Get the target instance
+            target = AlvoInvestigacao.objects.get(pk=pk)
+            
+            # Get recipient email, subject and message from request
+            recipient_email = request.data.get('recipient_email')
+            message_body = request.data.get('message', '')
+            subject = request.data.get('subject', '')
+            
+            if not recipient_email:
+                return Response({'error': 'Recipient email is required'}, status=400)
+            
+            # Send email about the target
+            success = send_target_investigation_email(target, recipient_email, message_body, subject)
+            
+            if success:
+                return Response({'message': f'Email sent successfully to {recipient_email}'})
+            else:
+                return Response({'error': 'Failed to send email'}, status=500)
+        
+        except AlvoInvestigacao.DoesNotExist:
+            return Response({'error': 'Target not found'}, status=404)
+        except Exception as e:
+            logging.exception(f"Error sending email for target {pk}: {str(e)}")
+            return Response({'error': str(e)}, status=500)
+
+
+class SendTestEmailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Send test email
+            success = send_test_email()
+            
+            if success:
+                return Response({'message': 'Test email sent successfully'})
+            else:
+                return Response({'error': 'Failed to send test email'}, status=500)
+        
+        except Exception as e:
+            logging.exception(f"Error sending test email: {str(e)}")
+            return Response({'error': str(e)}, status=500)
+
+
+class FirestoreUsersView(APIView):
+    """
+    View to retrieve users from Firestore.
+    Specifically designed to fetch users from the 'users' collection in Firestore.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """
+        Retrieve all users from Firestore 'users' collection.
+        """
+        try:
+            users = get_firestore_collection('users')
+            return Response({
+                'success': True,
+                'collection': 'users',
+                'count': len(users),
+                'data': users
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.core.serializers.json import DjangoJSONEncoder
+from .models import AlvoInvestigacao
+from .serializers import AlvoInvestigacaoSerializer
+from .sms_service import sms_service
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+import json
+
+# New SMS sending view
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_sms_to_suspect(request):
+    """
+    Send SMS to a suspect identified by their ID or phone number
+    """
+    try:
+        data = request.data
+        suspect_id = data.get('suspect_id')
+        phone_number = data.get('phone_number')
+        message = data.get('message')
+        
+        if not message:
+            return Response(
+                {'error': 'Message content is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # If suspect_id is provided, get the phone number from the suspect record
+        if suspect_id:
+            try:
+                suspect = AlvoInvestigacao.objects.get(id=suspect_id)
+                if not phone_number and hasattr(suspect, 'telefone'):
+                    phone_number = suspect.telefone
+            except AlvoInvestigacao.DoesNotExist:
+                return Response(
+                    {'error': 'Suspect not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        # Validate phone number
+        if not phone_number:
+            return Response(
+                {'error': 'Phone number is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Handle both single phone number and list of phone numbers
+        if isinstance(phone_number, list):
+            # For TelcoSMS, we send one SMS at a time
+            results = []
+            for num in phone_number:
+                success, result = send_sms_message(num, message)
+                results.append({'phone_number': num, 'success': success, 'result': result})
+            return Response({'results': results}, status=status.HTTP_200_OK)
+        else:
+            # Single phone number
+            success, result = send_sms_message(phone_number, message)
+            if success:
+                return Response({'success': True, 'result': result}, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'error': 'Failed to send SMS', 'details': result}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+    
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+

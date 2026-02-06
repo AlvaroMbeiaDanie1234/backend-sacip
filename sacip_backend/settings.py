@@ -66,6 +66,13 @@ INSTALLED_APPS = [
     'servico_rss',
     'facial_recognition',
 ]
+
+# Set Google Application Credentials if the environment variable is defined
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+if GOOGLE_APPLICATION_CREDENTIALS:
+    # Construct absolute path to the credentials file
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(BASE_DIR / GOOGLE_APPLICATION_CREDENTIALS)
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -158,7 +165,6 @@ if not DEBUG:
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
 
 
 

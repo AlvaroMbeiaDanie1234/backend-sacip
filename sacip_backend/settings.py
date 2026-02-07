@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'i2_analysis_notebook',
     'relatorios',
     'configuracoes',
-    'invasao',
     'analise_de_media_e_osint',
     'servico_rss',
     'facial_recognition',

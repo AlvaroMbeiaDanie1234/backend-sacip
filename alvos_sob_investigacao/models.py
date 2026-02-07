@@ -48,3 +48,54 @@ class AlvoInvestigacao(models.Model):
     
     def __str__(self):
         return f"{self.nome} {self.apelido} ({self.cpf})"
+
+
+class CommunicationHistory(models.Model):
+    """
+    Model to store communication history (SMS/Email) sent to targets
+    """
+    COMMUNICATION_TYPES = [
+        ('sms', 'SMS'),
+        ('email', 'Email'),
+    ]
+    
+    target = models.ForeignKey(
+        AlvoInvestigacao,
+        on_delete=models.CASCADE,
+        related_name='communications'
+    )
+    communication_type = models.CharField(
+        max_length=10,
+        choices=COMMUNICATION_TYPES
+    )
+    recipient = models.CharField(max_length=255)  # Phone number or email address
+    subject = models.CharField(max_length=255, blank=True)
+    message = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    sent_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_communications'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('sent', 'Sent'),
+            ('failed', 'Failed'),
+            ('delivered', 'Delivered'),
+            ('read', 'Read'),
+        ],
+        default='sent'
+    )
+    response = models.TextField(blank=True)  # For storing delivery receipts or responses
+    external_reference = models.CharField(max_length=255, blank=True)  # External API reference ID
+    
+    class Meta:
+        verbose_name = "Histórico de Comunicação"
+        verbose_name_plural = "Históricos de Comunicação"
+        ordering = ['-sent_at']
+    
+    def __str__(self):
+        return f"{self.communication_type.upper()} para {self.recipient} - {self.sent_at.strftime('%Y-%m-%d %H:%M')}"

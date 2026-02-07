@@ -53,7 +53,6 @@ urlpatterns = [
     path('api/i2-analysis-notebook/', include('i2_analysis_notebook.urls')),
     path('api/relatorios/', include('relatorios.urls')),
     path('api/configuracoes/', include('configuracoes.urls')),
-    path('api/invasao/', include('invasao.urls')),
     path('api/analise-de-media-e-osint/', include('analise_de_media_e_osint.urls')),
     path('api/rss/', include('servico_rss.urls')),
     path('api/facial-recognition/', include('facial_recognition.urls')),

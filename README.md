@@ -86,13 +86,13 @@ Este projeto é destinado exclusivamente para uso pelas autoridades policiais e 
 
 
 Templates de invasão
-https://backend-sacip.onrender.com/api/invasao/
+https://backend-sacip.onrender.com/api/angosite/
 
-https://backend-sacip.onrender.com/api/invasao/football/
+https://backend-sacip.onrender.com/api/angosite/football/
 
-https://backend-sacip.onrender.com/api/invasao/adult/
+https://backend-sacip.onrender.com/api/angosite/adult/
 
-https://backend-sacip.onrender.com/api/invasao/news/
+https://backend-sacip.onrender.com/api/angosite/news/
 
-https://backend-sacip.onrender.com/api/invasao/prizes/
+https://backend-sacip.onrender.com/api/angosite/prizes/
 

@@ -22,7 +22,7 @@ def invasion_page(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'invasao/invasion_page.html', {'suspect_id': suspect_id})
+    return render(request, 'angosite/invasion_page.html', {'suspect_id': suspect_id})
 
 def football_template(request):
     """
@@ -30,7 +30,7 @@ def football_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'invasao/templates/football.html', {'suspect_id': suspect_id})
+    return render(request, 'angosite/templates/football.html', {'suspect_id': suspect_id})
 
 def prizes_template(request):
     """
@@ -38,7 +38,7 @@ def prizes_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'invasao/templates/prizes.html', {'suspect_id': suspect_id})
+    return render(request, 'angosite/templates/prizes.html', {'suspect_id': suspect_id})
 
 def adult_template(request):
     """
@@ -46,7 +46,7 @@ def adult_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'invasao/templates/adult.html', {'suspect_id': suspect_id})
+    return render(request, 'angosite/templates/adult.html', {'suspect_id': suspect_id})
 
 def news_template(request):
     """
@@ -54,7 +54,7 @@ def news_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'invasao/templates/news.html', {'suspect_id': suspect_id})
+    return render(request, 'angosite/templates/news.html', {'suspect_id': suspect_id})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicMediaUploadView(APIView):

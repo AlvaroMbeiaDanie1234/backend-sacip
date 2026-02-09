@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AlvoInvestigacaoListCreateView, AlvoInvestigacaoRetrieveUpdateDestroyView, AlvoInvestigacaoUpdateDocumentoView, AddSuspectAsTargetView, SendTargetEmailView, SendTestEmailView, SendTargetSmsView, SendTestSmsView, TargetCommunicationHistoryView, FirebaseDataView, FirestoreUsersView, send_sms_to_suspect
+from .views import AlvoInvestigacaoListCreateView, AlvoInvestigacaoRetrieveUpdateDestroyView, AlvoInvestigacaoUpdateDocumentoView, AddSuspectAsTargetView, SendTargetEmailView, SendTestEmailView, SendTargetSmsView, SendTestSmsView, TargetCommunicationHistoryView, FirebaseDataView, FirestoreUsersView, send_sms_to_suspect, TargetFullHistoryView
 
 urlpatterns = [
     path('', AlvoInvestigacaoListCreateView.as_view(), name='alvo-investigacao-list-create'),
@@ -12,6 +12,7 @@ urlpatterns = [
     path('send-test-sms/', SendTestSmsView.as_view(), name='send-test-sms'),
     path('send-sms-to-suspect/', send_sms_to_suspect, name='send-sms-to-suspect'),
     path('<int:pk>/communication-history/', TargetCommunicationHistoryView.as_view(), name='target-communication-history'),
+    path('<int:pk>/full-history/', TargetFullHistoryView.as_view(), name='target-full-history'),
     path('firebase-data/', FirebaseDataView.as_view(), name='firebase-data'),
     path('firestore-users/', FirestoreUsersView.as_view(), name='firestore-users'),
 ]

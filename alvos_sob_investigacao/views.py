@@ -371,12 +371,29 @@ class AddSuspectAsTargetView(APIView):
             
             logging.info(f"Prepared alvo_data: {alvo_data}")
             
+            # Check if a target with this CPF already exists
+            cpf_to_check = alvo_data.get('cpf')
+            if cpf_to_check and not cpf_to_check.startswith('DEFAULT_'):
+                existing_target = AlvoInvestigacao.objects.filter(cpf=cpf_to_check).first()
+                if existing_target:
+                    logging.info(f"Target with CPF {cpf_to_check} already exists (ID: {existing_target.id})")
+                    serializer = AlvoInvestigacaoSerializer(existing_target)
+                    return Response({
+                        'message': 'Este suspeito já existe como alvo sob investigação',
+                        'already_exists': True,
+                        'target': serializer.data
+                    }, status=200)
+            
             # Create the new target
             serializer = AlvoInvestigacaoSerializer(data=alvo_data)
             if serializer.is_valid():
                 target = serializer.save()
                 logging.info(f"Successfully created target with ID: {target.id}")
-                return Response(serializer.data, status=201)
+                return Response({
+                    'message': 'Alvo criado com sucesso',
+                    'already_exists': False,
+                    'target': serializer.data
+                }, status=201)
             else:
                 logging.error(f"Serializer validation failed: {serializer.errors}")
                 return Response({'error': 'Validation failed', 'details': serializer.errors}, status=400)

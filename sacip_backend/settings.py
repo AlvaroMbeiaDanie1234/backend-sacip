@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'analise_de_media_e_osint',
     'servico_rss',
     'facial_recognition',
+    'invasao',
 ]
 
 # Set Google Application Credentials if the environment variable is defined

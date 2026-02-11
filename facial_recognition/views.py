@@ -123,8 +123,19 @@ def extract_faces_from_image(image_path):
         return []
 
 
-def scan_media_directories():
+# Global cache for media face data
+MEDIA_FACES_CACHE = None
+
+def scan_media_directories(force_refresh=False):
     """Scan media directories for images to use in facial recognition."""
+    global MEDIA_FACES_CACHE
+    
+    # Return cached data if available and not forcing refresh
+    if MEDIA_FACES_CACHE is not None and not force_refresh:
+        # print(f"✅ Using cached media faces ({len(MEDIA_FACES_CACHE)} faces)")
+        return MEDIA_FACES_CACHE
+
+    print("🔄 Scanning media directories for faces...")
     media_dirs = [
         "",  # Main media directory (relative to MEDIA_ROOT)
         "invasion_media",  # Invasion media directory
@@ -147,23 +158,27 @@ def scan_media_directories():
             for file in files:
                 file_path = Path(root) / file
                 if file_path.suffix.lower() in image_extensions:
-                    face_data = extract_faces_from_image(str(file_path))
-                    for face in face_data:
-                        face['id'] = str(file_path)
-                        face['source'] = 'Base de dados da POLICIA NACIONAL'
-                        media_root = Path(settings.MEDIA_ROOT)
-                        try:
-                            relative_path = file_path.relative_to(media_root)
-                            relative_path_str = str(relative_path).replace('\\', '/')
-                        except ValueError:
-                            relative_path = file_path.relative_to(Path(os.getcwd()))
-                            relative_path_str = str(relative_path).replace('\\', '/')
-                        face['photo_url'] = f"/media/{relative_path_str}"
-                        
-                        print(f"Generated photo URL: {face['photo_url']} for file: {file_path}")
-                        all_face_data.append(face)
+                    try:
+                        face_data = extract_faces_from_image(str(file_path))
+                        for face in face_data:
+                            face['id'] = str(file_path)
+                            face['source'] = 'Base de dados da POLICIA NACIONAL'
+                            media_root = Path(settings.MEDIA_ROOT)
+                            try:
+                                relative_path = file_path.relative_to(media_root)
+                                relative_path_str = str(relative_path).replace('\\', '/')
+                            except ValueError:
+                                relative_path = file_path.relative_to(Path(os.getcwd()))
+                                relative_path_str = str(relative_path).replace('\\', '/')
+                            face['photo_url'] = f"/media/{relative_path_str}"
+                            
+                            # print(f"Generated photo URL: {face['photo_url']} for file: {file_path}")
+                            all_face_data.append(face)
+                    except Exception as e:
+                        print(f"Error processing file {file_path}: {e}")
     
     print(f"🔍 Found {len(all_face_data)} faces in media directories")
+    MEDIA_FACES_CACHE = all_face_data
     return all_face_data
 
 

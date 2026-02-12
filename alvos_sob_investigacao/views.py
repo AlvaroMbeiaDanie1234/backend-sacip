@@ -10,8 +10,8 @@ from .models import AlvoInvestigacao
 from .serializers import AlvoInvestigacaoSerializer
 from .firebase_utils import get_firebase_data, get_firebase_record, search_firebase_data, get_multiple_firebase_paths
 from .firestore_utils import get_firestore_collection, get_firestore_document, query_firestore_collection
-from .models import CommunicationHistory
-from .serializers import CommunicationHistorySerializer, CommunicationHistoryListSerializer
+from .models import AlvoInvestigacao, CommunicationHistory, AntecedenteCriminal, OSINTEntrada
+from .serializers import CommunicationHistorySerializer, CommunicationHistoryListSerializer, AntecedenteCriminalSerializer, OSINTEntradaSerializer
 
 
 class FirebaseDataView(APIView):
@@ -679,4 +679,71 @@ class TargetFullHistoryView(generics.RetrieveAPIView):
             except Exception as e:
                 print(f"Error fetching deep search data for target {instance.id}: {e}")
         
+        
+        # Fetch Criminal Records
+        criminal_records = AntecedenteCriminal.objects.filter(alvo=instance).order_by('-data_crime')
+        criminal_records_serializer = AntecedenteCriminalSerializer(criminal_records, many=True)
+        data['criminal_records'] = criminal_records_serializer.data
+
+        # Fetch OSINT Entries
+        osint_entries = OSINTEntrada.objects.filter(alvo=instance).order_by('-data_associacao')
+        osint_entries_serializer = OSINTEntradaSerializer(osint_entries, many=True)
+        data['osint_entries'] = osint_entries_serializer.data
+        
         return Response(data)
+
+
+class AntecedenteCriminalListCreateView(generics.ListCreateAPIView):
+    """
+    View to list and create criminal records for a specific target.
+    """
+    serializer_class = AntecedenteCriminalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        alvo_id = self.kwargs.get('alvo_id')
+        return AntecedenteCriminal.objects.filter(alvo_id=alvo_id)
+
+    def perform_create(self, serializer):
+        alvo_id = self.kwargs.get('alvo_id')
+        alvo = AlvoInvestigacao.objects.get(pk=alvo_id)
+        serializer.save(alvo=alvo)
+
+class AssociateOSINTView(APIView):
+    """
+    View to associate OSINT data (text or images) with an investigation target.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        alvo_id = request.data.get('alvo_id')
+        items = request.data.get('items', [])
+        
+        if not alvo_id:
+            return Response({'error': 'alvo_id is required'}, status=400)
+            
+        try:
+            alvo = AlvoInvestigacao.objects.get(pk=alvo_id)
+        except AlvoInvestigacao.DoesNotExist:
+            return Response({'error': 'Target not found'}, status=404)
+            
+        created_entries = []
+        for item in items:
+            # Determine type based on item structure or explicit type field
+            # Assuming item has 'type', 'content', 'title', 'source'
+            
+            entry = OSINTEntrada.objects.create(
+                alvo=alvo,
+                tipo=item.get('type', 'text'),
+                conteudo=item.get('content', ''),
+                titulo=item.get('title', ''),
+                fonte=item.get('source', '')
+            )
+            created_entries.append(entry)
+            
+        serializer = OSINTEntradaSerializer(created_entries, many=True)
+        return Response({
+            'success': True,
+            'message': f'{len(created_entries)} items associated successfully',
+            'data': serializer.data
+        })

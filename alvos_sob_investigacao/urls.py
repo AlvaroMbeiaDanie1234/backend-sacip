@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AlvoInvestigacaoListCreateView, AlvoInvestigacaoRetrieveUpdateDestroyView, AlvoInvestigacaoUpdateDocumentoView, AddSuspectAsTargetView, SendTargetEmailView, SendTestEmailView, SendTargetSmsView, SendTestSmsView, TargetCommunicationHistoryView, FirebaseDataView, FirestoreUsersView, send_sms_to_suspect, TargetFullHistoryView
+from .views import AlvoInvestigacaoListCreateView, AlvoInvestigacaoRetrieveUpdateDestroyView, AlvoInvestigacaoUpdateDocumentoView, AddSuspectAsTargetView, SendTargetEmailView, SendTestEmailView, SendTargetSmsView, SendTestSmsView, SendTestSmsView, TargetCommunicationHistoryView, FirebaseDataView, FirestoreUsersView, send_sms_to_suspect, TargetFullHistoryView, AntecedenteCriminalListCreateView, AssociateOSINTView
 
 urlpatterns = [
     path('', AlvoInvestigacaoListCreateView.as_view(), name='alvo-investigacao-list-create'),
@@ -12,7 +12,9 @@ urlpatterns = [
     path('send-test-sms/', SendTestSmsView.as_view(), name='send-test-sms'),
     path('send-sms-to-suspect/', send_sms_to_suspect, name='send-sms-to-suspect'),
     path('<int:pk>/communication-history/', TargetCommunicationHistoryView.as_view(), name='target-communication-history'),
+    path('<int:alvo_id>/antecedentes/', AntecedenteCriminalListCreateView.as_view(), name='alvo-antecedentes'),
     path('<int:pk>/full-history/', TargetFullHistoryView.as_view(), name='target-full-history'),
+    path('associate-osint/', AssociateOSINTView.as_view(), name='associate-osint'),
     path('firebase-data/', FirebaseDataView.as_view(), name='firebase-data'),
     path('firestore-users/', FirestoreUsersView.as_view(), name='firestore-users'),
 ]

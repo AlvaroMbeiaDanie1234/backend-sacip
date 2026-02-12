@@ -24,8 +24,8 @@ class TermoOfensivoSerializer(serializers.ModelSerializer):
         read_only_fields = ('criado_em', 'atualizado_em', 'criado_por')
 
     def create(self, validated_data):
-        # Set the user who created the term
+        # Set the user who created the term only if they are authenticated
         request = self.context.get('request')
-        if request and hasattr(request, 'user'):
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
             validated_data['criado_por'] = request.user
         return super().create(validated_data)

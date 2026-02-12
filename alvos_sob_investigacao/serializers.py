@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AlvoInvestigacao, CommunicationHistory
+from .models import AlvoInvestigacao, CommunicationHistory, AntecedenteCriminal, OSINTEntrada
 
 
 class AlvoInvestigacaoSerializer(serializers.ModelSerializer):
@@ -36,3 +36,17 @@ class CommunicationHistoryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunicationHistory
         fields = ['id', 'communication_type', 'recipient', 'subject', 'sent_at', 'status']
+
+
+class AntecedenteCriminalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AntecedenteCriminal
+        fields = '__all__'
+        read_only_fields = ('data_registro',)
+
+
+class OSINTEntradaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OSINTEntrada
+        fields = '__all__'
+        read_only_fields = ('data_associacao',)

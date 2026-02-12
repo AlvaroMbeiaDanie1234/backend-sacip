@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from .models import ConfiguracaoSistema, ConfiguracaoUsuario, Configuracao, TermoOfensivo
 from .serializers import (
@@ -58,7 +58,7 @@ class ConfiguracaoDetailView(generics.RetrieveUpdateDestroyAPIView):
 class TermoOfensivoListView(generics.ListCreateAPIView):
     queryset = TermoOfensivo.objects.all()
     serializer_class = TermoOfensivoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -68,7 +68,7 @@ class TermoOfensivoListView(generics.ListCreateAPIView):
 class TermoOfensivoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = TermoOfensivo.objects.all()
     serializer_class = TermoOfensivoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
 @api_view(['GET'])
 def get_termos_ofensivos_public(request):
@@ -105,6 +105,7 @@ def get_termos_ofensivos_by_severity(request):
 
 # Temporary mock endpoints for testing when database isn't ready
 @api_view(['GET'])
+@permission_classes([permissions.AllowAny])
 def get_termos_ofensivos_mock(request):
     """
     Mock endpoint for testing - returns sample offensive terms
@@ -151,6 +152,7 @@ def get_termos_ofensivos_mock(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def create_termo_ofensivo_mock(request):
     """
     Mock endpoint for creating offensive terms
@@ -159,6 +161,7 @@ def create_termo_ofensivo_mock(request):
 
 
 @api_view(['PUT'])
+@permission_classes([permissions.AllowAny])
 def update_termo_ofensivo_mock(request, pk):
     """
     Mock endpoint for updating offensive terms
@@ -167,6 +170,7 @@ def update_termo_ofensivo_mock(request, pk):
 
 
 @api_view(['DELETE'])
+@permission_classes([permissions.AllowAny])
 def delete_termo_ofensivo_mock(request, pk):
     """
     Mock endpoint for deleting offensive terms

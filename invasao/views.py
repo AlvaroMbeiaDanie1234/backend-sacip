@@ -109,10 +109,14 @@ class PublicMediaUploadView(APIView):
         
         request_data['file_size'] = file_size
         
+        # Extract latitude and longitude from request data
+        request_data['latitude'] = request.data.get('latitude')
+        request_data['longitude'] = request.data.get('longitude')
+        
         serializer = CapturedMediaSerializer(data=request_data)
         if serializer.is_valid():
             saved_media = serializer.save()
-            print(f"Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}")
+            print(f"Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}, Geo: {saved_media.latitude}, {saved_media.longitude}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             print(f"Serializer errors: {serializer.errors}")
@@ -146,7 +150,9 @@ def get_captures_by_suspect(request):
             'suspectName': capture.session.title,
             'imageUrl': request.build_absolute_uri(capture.file.url) if capture.file else '',
             'timestamp': capture.timestamp.strftime('%H:%M:%S'),
-            'fileType': capture.media_type
+            'fileType': capture.media_type,
+            'latitude': capture.latitude,
+            'longitude': capture.longitude
         })
     
     print(f"Returning {len(serialized_captures)} serialized captures")

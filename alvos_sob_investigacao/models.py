@@ -99,3 +99,66 @@ class CommunicationHistory(models.Model):
     
     def __str__(self):
         return f"{self.communication_type.upper()} para {self.recipient} - {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class AntecedenteCriminal(models.Model):
+    """
+    Model to store criminal records for a target.
+    """
+    STATUS_CHOICES = [
+        ('suspeito', 'Suspeito'),
+        ('acusado', 'Acusado'),
+        ('condenado', 'Condenado'),
+        ('arquivado', 'Arquivado'),
+        ('cumprido', 'Pena Cumprida'),
+    ]
+    
+    alvo = models.ForeignKey(
+        AlvoInvestigacao,
+        on_delete=models.CASCADE,
+        related_name='antecedentes_criminais'
+    )
+    tipo_crime = models.CharField(max_length=100)
+    data_crime = models.DateField(null=True, blank=True)
+    descricao = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='suspeito')
+    pena = models.CharField(max_length=100, blank=True)
+    local_crime = models.CharField(max_length=255, blank=True)
+    data_registro = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Antecedente Criminal"
+        verbose_name_plural = "Antecedentes Criminais"
+        ordering = ['-data_crime']
+    
+    def __str__(self):
+        return f"{self.tipo_crime} - {self.alvo.nome} ({self.status})"
+
+
+class OSINTEntrada(models.Model):
+    """
+    Model to store OSINT data (text or images) associated with a target.
+    """
+    TYPE_CHOICES = [
+        ('text', 'Texto'),
+        ('image', 'Imagem'),
+    ]
+    
+    alvo = models.ForeignKey(
+        AlvoInvestigacao,
+        on_delete=models.CASCADE,
+        related_name='osint_entries'
+    )
+    tipo = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    conteudo = models.TextField()  # Can be text content or image URL
+    titulo = models.CharField(max_length=255, blank=True)
+    fonte = models.CharField(max_length=255, blank=True)
+    data_associacao = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Entrada OSINT"
+        verbose_name_plural = "Entradas OSINT"
+        ordering = ['-data_associacao']
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.alvo.nome} - {self.data_associacao}"

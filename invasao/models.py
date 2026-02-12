@@ -53,6 +53,8 @@ class CapturedMedia(models.Model):
     duration = models.DurationField(null=True, blank=True)  # For video/audio
     file_size = models.PositiveIntegerField(help_text="File size in bytes", null=True, blank=True)
     metadata = models.TextField(blank=True, help_text="JSON formatted metadata")
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     
     class Meta:
         verbose_name = "Captured Media"

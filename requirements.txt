@@ -30,3 +30,6 @@ requests[socks]==2.32.3
 zendriver>=0.15.0
 firebase-admin>=6.5.0
 google-cloud-firestore>=2.15.0
+requests-futures>=1.0.0
+colorama>=0.4.4
+pandas>=1.3.0

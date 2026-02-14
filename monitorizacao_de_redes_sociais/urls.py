@@ -18,7 +18,11 @@ from .views import (
     buscar_resultados_alerta,
     buscar_todos_alertas_resultados,
     get_nossa_comunidade_users,
-    sherlock_search
+    sherlock_search,
+    sherlock_search_stream,
+    associar_perfil_alvo,
+    listar_links_alvo,
+    alvos_com_links,
 )
 
 urlpatterns = [
@@ -49,4 +53,8 @@ urlpatterns = [
     path('alertas-monitoramento/buscar-todos-resultados/', buscar_todos_alertas_resultados, name='buscar-todos-alertas-resultados'),
     path('nossa-comunidade/users/', get_nossa_comunidade_users, name='nossa-comunidade-users'),
     path('sherlock/', sherlock_search, name='sherlock-search'),
+    path('sherlock/stream/', sherlock_search_stream, name='sherlock-search-stream'),
+    path('alvos-redes-sociais/associar/', associar_perfil_alvo, name='associar-perfil-alvo'),
+    path('alvos-redes-sociais/links/', listar_links_alvo, name='listar-links-alvo'),
+    path('alvos-redes-sociais/alvos-com-links/', alvos_com_links, name='alvos-com-links'),
 ]

@@ -2,8 +2,8 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PerfilRedeSocial, Postagem, AlertaMonitoramento
-from .serializers import PerfilRedeSocialSerializer, PostagemSerializer, AlertaMonitoramentoSerializer
+from .models import PerfilRedeSocial, Postagem, AlertaMonitoramento, LinkRedeSocialAlvo
+from .serializers import PerfilRedeSocialSerializer, PostagemSerializer, AlertaMonitoramentoSerializer, LinkRedeSocialAlvoSerializer
 from .scraper import SocialMediaScraperService
 from alvos_sob_investigacao.firestore_utils import get_firestore_collection
 from django.db.models import Prefetch
@@ -365,10 +365,89 @@ def get_nossa_comunidade_users(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# --- Links redes sociais associados a alvos (Sherlock) ---
+try:
+    from alvos_sob_investigacao.models import AlvoInvestigacao
+except ImportError:
+    AlvoInvestigacao = None
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def associar_perfil_alvo(request):
+    """Associa um link de rede social (ex: resultado Sherlock) a um alvo."""
+    alvo_id = request.data.get('alvo_id')
+    nome_site = request.data.get('nome_site')
+    url_perfil = request.data.get('url_perfil')
+    if not alvo_id or not nome_site or not url_perfil:
+        return Response(
+            {'error': 'alvo_id, nome_site e url_perfil são obrigatórios'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    try:
+        link, created = LinkRedeSocialAlvo.objects.get_or_create(
+            alvo_id=int(alvo_id),
+            nome_site=nome_site.strip(),
+            defaults={
+                'url_perfil': url_perfil.strip(),
+                'associado_por': request.user if request.user.is_authenticated else None,
+            }
+        )
+        if not created:
+            link.url_perfil = url_perfil.strip()
+            link.associado_por = request.user if request.user.is_authenticated else None
+            link.save(update_fields=['url_perfil', 'associado_por'])
+        return Response(LinkRedeSocialAlvoSerializer(link).data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def listar_links_alvo(request):
+    """Lista links associados a um alvo (query: ?alvo_id=)."""
+    alvo_id = request.query_params.get('alvo_id')
+    if not alvo_id:
+        return Response({'error': 'alvo_id é obrigatório'}, status=status.HTTP_400_BAD_REQUEST)
+    links = LinkRedeSocialAlvo.objects.filter(alvo_id=int(alvo_id)).order_by('-data_associacao')
+    return Response(LinkRedeSocialAlvoSerializer(links, many=True).data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def alvos_com_links(request):
+    """Lista alvos que têm pelo menos um link de rede social associado, com os links (para cards em Atividades Recentes)."""
+    from collections import defaultdict
+    links = LinkRedeSocialAlvo.objects.all().order_by('alvo_id', '-data_associacao')
+    by_alvo = defaultdict(list)
+    for link in links:
+        by_alvo[link.alvo_id].append(LinkRedeSocialAlvoSerializer(link).data)
+    alvo_ids = list(by_alvo.keys())
+    if not alvo_ids:
+        return Response([], status=status.HTTP_200_OK)
+    nomes = {}
+    if AlvoInvestigacao:
+        for a in AlvoInvestigacao.objects.filter(id__in=alvo_ids).values('id', 'nome'):
+            nomes[a['id']] = a['nome']
+    result = [
+        {
+            'alvo_id': aid,
+            'alvo_nome': nomes.get(aid, f'Alvo #{aid}'),
+            'links': by_alvo[aid],
+        }
+        for aid in sorted(alvo_ids)
+    ]
+    return Response(result, status=status.HTTP_200_OK)
+
+
 from .sherlock_project.sherlock import sherlock
 from .sherlock_project.sites import SitesInformation
 from .sherlock_project.notify import QueryNotify
 from .sherlock_project.result import QueryStatus
+from django.http import StreamingHttpResponse, HttpResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+import queue
 
 class ResultCollector(QueryNotify):
     def __init__(self):
@@ -381,6 +460,30 @@ class ResultCollector(QueryNotify):
                 'site': result.site_name,
                 'url': result.site_url_user,
             })
+
+
+class StreamingResultCollector(QueryNotify):
+    """Collector that pushes each result to a queue for SSE streaming."""
+    SENTINEL = None  # end of stream
+
+    def __init__(self, result_queue):
+        super().__init__()
+        self.result_queue = result_queue
+
+    def start(self, message=None):
+        self.result_queue.put({'type': 'start', 'username': message or ''})
+
+    def update(self, result):
+        if result.status == QueryStatus.CLAIMED:
+            self.result_queue.put({
+                'type': 'result',
+                'site': result.site_name,
+                'url': result.site_url_user,
+            })
+
+    def finish(self, message=None):
+        self.result_queue.put({'type': 'done'})
+        self.result_queue.put(StreamingResultCollector.SENTINEL)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -419,7 +522,8 @@ def sherlock_search(request):
             username=username,
             site_data=site_data,
             query_notify=collector,
-            timeout=timeout
+            timeout=timeout,
+            dump_response=False
         )
         
         return Response({
@@ -433,3 +537,80 @@ def sherlock_search(request):
         import traceback
         error_msg = f"{str(e)}\n{traceback.format_exc()}"
         return Response({'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def _sherlock_stream_generator(username, result_queue, data_file_path, nsfw=False, timeout=60):
+    """Generator that yields SSE events from the queue while sherlock runs in a thread."""
+    def run_sherlock():
+        try:
+            sites = SitesInformation(data_file_path=data_file_path)
+            if not nsfw:
+                sites.remove_nsfw_sites()
+            site_data = {site.name: site.information for site in sites}
+            collector = StreamingResultCollector(result_queue)
+            sherlock(
+                username=username,
+                site_data=site_data,
+                query_notify=collector,
+                timeout=timeout,
+                dump_response=False,
+            )
+        except Exception as e:
+            import traceback
+            result_queue.put({'type': 'error', 'error': str(e), 'traceback': traceback.format_exc()})
+        result_queue.put(StreamingResultCollector.SENTINEL)
+
+    t = Thread(target=run_sherlock)
+    t.start()
+
+    while True:
+        item = result_queue.get()
+        if item is StreamingResultCollector.SENTINEL:
+            break
+        yield f"data: {json.dumps(item)}\n\n"
+
+    t.join(timeout=1)
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def sherlock_search_stream(request):
+    """
+    Execute Sherlock search and stream each result as Server-Sent Events (SSE).
+    Plain Django view to avoid DRF content negotiation (406) for text/event-stream.
+    """
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        return HttpResponse(
+            json.dumps({'error': 'Invalid JSON body'}),
+            status=400,
+            content_type='application/json',
+        )
+    username = body.get('username')
+    nsfw = body.get('nsfw', False)
+    timeout = body.get('timeout', 60)
+
+    if not username:
+        return HttpResponse(
+            json.dumps({'error': 'Username is required'}),
+            status=400,
+            content_type='application/json',
+        )
+
+    data_file_path = os.path.join(os.path.dirname(__file__), 'sherlock_project', 'resources', 'data.json')
+    if not os.path.exists(data_file_path):
+        return HttpResponse(
+            json.dumps({'error': f'Sherlock data file not found at {data_file_path}'}),
+            status=500,
+            content_type='application/json',
+        )
+
+    result_queue = queue.Queue()
+    response = StreamingHttpResponse(
+        _sherlock_stream_generator(username, result_queue, data_file_path, nsfw=nsfw, timeout=timeout),
+        content_type='text/event-stream',
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response

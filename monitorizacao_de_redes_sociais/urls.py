@@ -17,7 +17,8 @@ from .views import (
     criar_alerta_monitoramento,
     buscar_resultados_alerta,
     buscar_todos_alertas_resultados,
-    get_nossa_comunidade_users
+    get_nossa_comunidade_users,
+    sherlock_search
 )
 
 urlpatterns = [
@@ -47,4 +48,5 @@ urlpatterns = [
     path('alertas-monitoramento/<int:alerta_id>/buscar-resultados/', buscar_resultados_alerta, name='buscar-resultados-alerta'),
     path('alertas-monitoramento/buscar-todos-resultados/', buscar_todos_alertas_resultados, name='buscar-todos-alertas-resultados'),
     path('nossa-comunidade/users/', get_nossa_comunidade_users, name='nossa-comunidade-users'),
+    path('sherlock/', sherlock_search, name='sherlock-search'),
 ]

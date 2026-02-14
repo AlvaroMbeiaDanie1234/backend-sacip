@@ -13,6 +13,9 @@ import re
 from datetime import datetime
 import time
 from threading import Thread
+import subprocess
+import os
+import json
 
 
 class PerfilRedeSocialListCreateView(generics.ListCreateAPIView):
@@ -360,3 +363,73 @@ def get_nossa_comunidade_users(request):
         }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+from .sherlock_project.sherlock import sherlock
+from .sherlock_project.sites import SitesInformation
+from .sherlock_project.notify import QueryNotify
+from .sherlock_project.result import QueryStatus
+
+class ResultCollector(QueryNotify):
+    def __init__(self):
+        super().__init__()
+        self.found_results = []
+
+    def update(self, result):
+        if result.status == QueryStatus.CLAIMED:
+            self.found_results.append({
+                'site': result.site_name,
+                'url': result.site_url_user,
+            })
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def sherlock_search(request):
+    """
+    Execute internal sherlock search for a given username.
+    """
+    username = request.data.get('username')
+    nsfw = request.data.get('nsfw', False)
+    timeout = request.data.get('timeout', 60)
+    
+    if not username:
+        return Response({'error': 'Username is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Load sites from the internal resources
+        data_file_path = os.path.join(os.path.dirname(__file__), 'sherlock_project', 'resources', 'data.json')
+        
+        if not os.path.exists(data_file_path):
+            return Response({'error': f'Sherlock data file not found at {data_file_path}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        sites = SitesInformation(data_file_path=data_file_path)
+        
+        if not nsfw:
+            sites.remove_nsfw_sites()
+            
+        site_data = {site.name: site.information for site in sites}
+        
+        # Initialize our result collector
+        collector = ResultCollector()
+        
+        # Execute sherlock search programmatically
+        # This will run in the main thread (synchronously within the view)
+        # The timeout here is per-site request
+        results_raw = sherlock(
+            username=username,
+            site_data=site_data,
+            query_notify=collector,
+            timeout=timeout
+        )
+        
+        return Response({
+            'username': username,
+            'results': collector.found_results,
+            'count': len(collector.found_results),
+            'status': 'completed'
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        return Response({'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

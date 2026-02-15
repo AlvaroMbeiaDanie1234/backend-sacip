@@ -4,6 +4,7 @@ from rest_framework import status
 from .models import InformacaoSuspeita
 from .serializers import InformacaoSuspeitaSerializer
 from facial_recognition.models import Suspect
+import json
 
 
 class InformacaoSuspeitaListCreateView(generics.ListCreateAPIView):

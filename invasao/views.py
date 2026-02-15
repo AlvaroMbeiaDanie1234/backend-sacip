@@ -113,13 +113,15 @@ class PublicMediaUploadView(APIView):
         request_data['latitude'] = request.data.get('latitude')
         request_data['longitude'] = request.data.get('longitude')
         
-        serializer = CapturedMediaSerializer(data=request_data)
+        serializer = CapturedMediaSerializer(data=request_data, context={'request': request})
         if serializer.is_valid():
             saved_media = serializer.save()
-            print(f"Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}, Geo: {saved_media.latitude}, {saved_media.longitude}")
+            print(f"✅ SUCCESS: Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}, Geo: {saved_media.latitude}, {saved_media.longitude}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            print(f"Serializer errors: {serializer.errors}")
+            print(f"❌ ERROR: Serializer errors: {serializer.errors}")
+            # Log the request data for better debugging
+            print(f"   Request Data: {request.data}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
@@ -141,22 +143,11 @@ def get_captures_by_suspect(request):
         captures = CapturedMedia.objects.all().order_by('-timestamp')
         print(f"Found {captures.count()} total captures")
     
-    # Serialize the captures
-    serialized_captures = []
-    for capture in captures:
-        serialized_captures.append({
-            'id': capture.id,
-            'suspectId': capture.session.id,
-            'suspectName': capture.session.title,
-            'imageUrl': request.build_absolute_uri(capture.file.url) if capture.file else '',
-            'timestamp': capture.timestamp.strftime('%H:%M:%S'),
-            'fileType': capture.media_type,
-            'latitude': capture.latitude,
-            'longitude': capture.longitude
-        })
+    # Serialize the captures using the serializer
+    serializer = CapturedMediaSerializer(captures, many=True, context={'request': request})
     
-    print(f"Returning {len(serialized_captures)} serialized captures")
-    return Response(serialized_captures)
+    print(f"Returning {len(serializer.data)} serialized captures")
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([])  # No authentication required

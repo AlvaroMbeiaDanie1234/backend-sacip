@@ -10,14 +10,15 @@ class IntrusionSessionSerializer(serializers.ModelSerializer):
 
 
 class CapturedMediaSerializer(serializers.ModelSerializer):
-    file_url = serializers.SerializerMethodField()
+    imageUrl = serializers.SerializerMethodField()
+    deviceInfo = serializers.ReadOnlyField(source='session.target_device')
     
     class Meta:
         model = CapturedMedia
-        fields = '__all__'
+        fields = ['id', 'session', 'media_type', 'file', 'imageUrl', 'deviceInfo', 'latitude', 'longitude', 'timestamp', 'caption', 'metadata']
         read_only_fields = ('timestamp',)
     
-    def get_file_url(self, obj):
+    def get_imageUrl(self, obj):
         """Return absolute URL for the file"""
         request = self.context.get('request')
         if obj.file and request:

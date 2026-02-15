@@ -59,20 +59,8 @@ def send_target_investigation_email(target, recipient_email, message_body="", su
     <html>
       <body>
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #4CAF50;">SACIP - Sistema de Análise Criminal Integrado de Polícia</h1>
-          </div>
-          <h2 style="color: #4CAF50; text-align: center;">Informações do Alvo Sob Investigação</h2>
-          
-          <p>Prezado Analista,</p>
-          
-          <p>Este é um comunicado sobre o alvo sob investigação:</p>
-          
+         
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>ID:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.id}</td>
-            </tr>
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><strong>Nome:</strong></td>
               <td style="padding: 8px; border: 1px solid #ddd;">{target.nome}</td>
@@ -80,26 +68,6 @@ def send_target_investigation_email(target, recipient_email, message_body="", su
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><strong>Apelido:</strong></td>
               <td style="padding: 8px; border: 1px solid #ddd;">{target.apelido}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Número de Identificação:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.cpf}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.email or 'N/A'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Telefone:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.telefone or 'N/A'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Status:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.get_status_display()}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Nível de Prioridade:</strong></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">{target.nivel_prioridade}</td>
             </tr>
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><strong>Observações:</strong></td>
@@ -116,10 +84,6 @@ def send_target_investigation_email(target, recipient_email, message_body="", su
           <strong>Equipe SACIP</strong></p>
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="font-size: 0.8em; color: #666; text-align: center;">
-            Este é um e-mail automático gerado pelo Sistema de Análise Criminal Integrado de Polícia.<br>
-            Por favor, não responda diretamente a este e-mail.
-          </p>
         </div>
       </body>
     </html>

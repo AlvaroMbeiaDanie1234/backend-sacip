@@ -23,6 +23,7 @@ from .views import (
     associar_perfil_alvo,
     listar_links_alvo,
     alvos_com_links,
+    holehe_search_stream,
 )
 
 urlpatterns = [
@@ -54,6 +55,7 @@ urlpatterns = [
     path('nossa-comunidade/users/', get_nossa_comunidade_users, name='nossa-comunidade-users'),
     path('sherlock/', sherlock_search, name='sherlock-search'),
     path('sherlock/stream/', sherlock_search_stream, name='sherlock-search-stream'),
+    path('holehe/stream/', holehe_search_stream, name='holehe-search-stream'),
     path('alvos-redes-sociais/associar/', associar_perfil_alvo, name='associar-perfil-alvo'),
     path('alvos-redes-sociais/links/', listar_links_alvo, name='listar-links-alvo'),
     path('alvos-redes-sociais/alvos-com-links/', alvos_com_links, name='alvos-com-links'),

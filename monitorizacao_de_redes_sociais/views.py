@@ -427,12 +427,13 @@ def alvos_com_links(request):
         return Response([], status=status.HTTP_200_OK)
     nomes = {}
     if AlvoInvestigacao:
-        for a in AlvoInvestigacao.objects.filter(id__in=alvo_ids).values('id', 'nome'):
-            nomes[a['id']] = a['nome']
+        for a in AlvoInvestigacao.objects.filter(id__in=alvo_ids).values('id', 'nome', 'email'):
+            nomes[a['id']] = {'nome': a['nome'], 'email': a.get('email', '')}
     result = [
         {
             'alvo_id': aid,
-            'alvo_nome': nomes.get(aid, f'Alvo #{aid}'),
+            'alvo_nome': nomes.get(aid, {}).get('nome', f'Alvo #{aid}'),
+            'alvo_email': nomes.get(aid, {}).get('email', ''),
             'links': by_alvo[aid],
         }
         for aid in sorted(alvo_ids)
@@ -609,6 +610,103 @@ def sherlock_search_stream(request):
     result_queue = queue.Queue()
     response = StreamingHttpResponse(
         _sherlock_stream_generator(username, result_queue, data_file_path, nsfw=nsfw, timeout=timeout),
+        content_type='text/event-stream',
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
+
+
+# --- Holehe (Email Search) ---
+from .holehe_tool import core as holehe_core
+import trio
+
+def _holehe_stream_generator(email, result_queue):
+    """Generator that yields SSE events from the queue while holehe runs in a thread."""
+    def run_holehe():
+        try:
+            # Import modules within the thread to avoid issues
+            modules = holehe_core.import_submodules("monitorizacao_de_redes_sociais.holehe_tool.modules")
+            
+            class MockArgs:
+                nopasswordrecovery = False
+            
+            websites = holehe_core.get_functions(modules, MockArgs())
+            
+            # Use a wrapper to push results to the queue in real-time
+            async def launch_module_wrapped(module, email, client, out, q):
+                old_len = len(out)
+                try:
+                    await holehe_core.launch_module(module, email, client, out)
+                    if len(out) > old_len:
+                        res = out[-1]
+                        if res.get("exists"):
+                            q.put({
+                                'type': 'result',
+                                'site': res.get("domain"),
+                                'url': res.get("domain") # Holehe often only gives domain
+                            })
+                except Exception:
+                    pass
+
+            async def main_holehe_async():
+                import httpx
+                client = httpx.AsyncClient(timeout=10)
+                out = []
+                result_queue.put({'type': 'start', 'email': email})
+                
+                async with trio.open_nursery() as nursery:
+                    for website in websites:
+                        nursery.start_soon(launch_module_wrapped, website, email, client, out, result_queue)
+                
+                await client.aclose()
+                result_queue.put({'type': 'done'})
+                result_queue.put(StreamingResultCollector.SENTINEL)
+
+            trio.run(main_holehe_async)
+        except Exception as e:
+            import traceback
+            result_queue.put({'type': 'error', 'error': str(e), 'traceback': traceback.format_exc()})
+            result_queue.put(StreamingResultCollector.SENTINEL)
+
+    t = Thread(target=run_holehe)
+    t.start()
+
+    while True:
+        item = result_queue.get()
+        if item is StreamingResultCollector.SENTINEL:
+            break
+        yield f"data: {json.dumps(item)}\n\n"
+
+    t.join(timeout=1)
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def holehe_search_stream(request):
+    """
+    Execute Holehe search for a given email and stream results.
+    """
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        return HttpResponse(
+            json.dumps({'error': 'Invalid JSON body'}),
+            status=400,
+            content_type='application/json',
+        )
+    
+    email = body.get('email')
+    if not email:
+        return HttpResponse(
+            json.dumps({'error': 'Email is required'}),
+            status=400,
+            content_type='application/json',
+        )
+
+    result_queue = queue.Queue()
+    response = StreamingHttpResponse(
+        _holehe_stream_generator(email, result_queue),
         content_type='text/event-stream',
     )
     response['Cache-Control'] = 'no-cache'

@@ -21,7 +21,7 @@ try:
     INSIGHTFACE_AVAILABLE = True
 except ImportError:
     INSIGHTFACE_AVAILABLE = False
-    print("InsightFace not available. Facial recognition will be disabled.")
+    print("[INFO] InsightFace not available. Facial recognition will be disabled.")
 
 # Configuration
 MODEL_NAME = 'buffalo_l'
@@ -43,7 +43,7 @@ def initialize_face_app():
         face_app = FaceAnalysis(name=MODEL_NAME, providers=['CPUExecutionProvider'], root=Path("models"))
         face_app.prepare(ctx_id=0, det_size=(640, 640))
         face_app_initialized = True
-        print("✅ Face analysis model initialized")
+        print("[SUCCESS] Face analysis model initialized")
         
     return face_app is not None
 
@@ -97,7 +97,7 @@ def extract_faces_from_image(image_path):
         # Load image
         img = cv2.imread(image_path)
         if img is None:
-            print(f"⚠️ Could not load image: {image_path}")
+            print(f"[ERROR] Could not load image: {image_path}")
             return []
         
         # Convert BGR to RGB
@@ -119,7 +119,7 @@ def extract_faces_from_image(image_path):
         
         return face_data
     except Exception as e:
-        print(f"Error extracting faces from {image_path}: {e}")
+        print(f"[ERROR] Error extracting faces from {image_path}: {e}")
         return []
 
 
@@ -132,10 +132,10 @@ def scan_media_directories(force_refresh=False):
     
     # Return cached data if available and not forcing refresh
     if MEDIA_FACES_CACHE is not None and not force_refresh:
-        # print(f"✅ Using cached media faces ({len(MEDIA_FACES_CACHE)} faces)")
+        # print(f"[SUCCESS] Using cached media faces ({len(MEDIA_FACES_CACHE)} faces)")
         return MEDIA_FACES_CACHE
 
-    print("🔄 Scanning media directories for faces...")
+    print("[INFO] Scanning media directories for faces...")
     media_dirs = [
         "",  # Main media directory (relative to MEDIA_ROOT)
         "invasion_media",  # Invasion media directory
@@ -148,7 +148,7 @@ def scan_media_directories(force_refresh=False):
         abs_media_dir = Path(settings.MEDIA_ROOT) / media_dir
         
         if not abs_media_dir.exists():
-            print(f"⚠️ Media directory does not exist: {abs_media_dir}")
+            print(f"[WARNING] Media directory does not exist: {abs_media_dir}")
             continue
         
         # Supported image extensions
@@ -175,9 +175,9 @@ def scan_media_directories(force_refresh=False):
                             # print(f"Generated photo URL: {face['photo_url']} for file: {file_path}")
                             all_face_data.append(face)
                     except Exception as e:
-                        print(f"Error processing file {file_path}: {e}")
+                        print(f"[ERROR] Error processing file {file_path}: {e}")
     
-    print(f"🔍 Found {len(all_face_data)} faces in media directories")
+    print(f"[SUCCESS] Found {len(all_face_data)} faces in media directories")
     MEDIA_FACES_CACHE = all_face_data
     return all_face_data
 
@@ -188,7 +188,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     
     for suspect in suspects_db:
         similarity = cosine_similarity(embedding, suspect['embedding'])
-        print(f"🔍 Comparing with {suspect['nickname']}: similarity = {similarity:.2f}")
+        print(f"[INFO] Comparing with {suspect['nickname']}: similarity = {similarity:.2f}")
         
         if similarity > threshold and similarity >= min_similarity:
             results.append({
@@ -206,7 +206,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     if media_face_data:
         for face_data in media_face_data:
             similarity = cosine_similarity(embedding, face_data['embedding'])
-            print(f"🔍 Comparing with media image {face_data['id']}: similarity = {similarity:.2f}")
+            print(f"[INFO] Comparing with media image {face_data['id']}: similarity = {similarity:.2f}")
             
             # Return all faces that meet the similarity threshold
             if similarity > threshold and similarity >= min_similarity:
@@ -227,7 +227,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     
     if results:
         best_match = results[0]
-        print(f"✅ Best match: {best_match['nickname']} ({best_match['similarity']:.2f})")
+        print(f"[SUCCESS] Best match: {best_match['nickname']} ({best_match['similarity']:.2f})")
     
     return results
 
@@ -281,16 +281,24 @@ def process_frame(request):
         
         # Detect faces in the frame
         faces = face_app.get(frame)
-        print(f"🔍 Faces detected: {len(faces)}")
+        print(f"[INFO] Faces detected: {len(faces)}")
         
         results = []
+        all_detected_faces = []
+
         for face in faces:
             bbox = face.bbox.astype(int)
             embedding = face.embedding
             
+            # Store detected face info (regardless of recognition)
+            all_detected_faces.append({
+                "bbox": bbox.tolist()
+            })
+            
             # Recognize suspects from both database and media directories with specified minimum similarity
             matches = recognize_suspects(embedding, suspects_db, media_face_data=media_face_data, min_similarity=min_similarity)
             
+            matched = False
             for match in matches:
                 # Only create alerts and results for matches above threshold from database suspects
                 if match['similarity'] >= THRESHOLD and match.get('suspect_obj'):
@@ -311,6 +319,7 @@ def process_frame(request):
                 
                 # Only add results with similarity >= 0.5 (50%) to reduce noise
                 if match["similarity"] >= 0.5:
+                    matched = True
                     results.append({
                         "id": match["id"],
                         "full_name": match["full_name"],
@@ -323,32 +332,34 @@ def process_frame(request):
                         "bbox": bbox.tolist()
                     })
                 
-                # Draw circle around face and label on frame
+                # Draw rectangle around face and label on frame
                 color = (0, 255, 0)  # Green
-                # Calculate center and radius for circle based on bounding box
-                center_x = int((bbox[0] + bbox[2]) / 2)
-                center_y = int((bbox[1] + bbox[3]) / 2)
-                radius = int(max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / 2)
-                cv2.circle(frame, (center_x, center_y), radius, color, 2)
+                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 2)
                 
-                # Draw similarity text above the circle
+                # Draw similarity text above the rectangle
                 cv2.putText(frame, f"{match['nickname']} ({match['similarity']:.2f})",
                            (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
                 
-                # Draw additional info below the circle
+                # Draw additional info below the rectangle
                 cv2.putText(frame, f"{match['full_name']} | {match['dangerous_level']}",
                            (bbox[0], bbox[3] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-        
+
+            # If no match found, draw a neutral box to indicate scanning
+            if not matched:
+                color = (200, 200, 200) # Gray/White
+                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 1)
+
         # Encode processed frame back to base64
         _, buffer = cv2.imencode(".jpg", frame)
         processed_frame = base64.b64encode(buffer).decode("utf-8")
         
-        print(f"📤 Sending frame: {len(processed_frame)} bytes, {len(results)} suspects")
+        print(f"[INFO] Sending frame: {len(processed_frame)} bytes, {len(results)} suspects, {len(all_detected_faces)} detected faces")
         
         # Prepare response data
         response_data = {
             "frame": processed_frame,
-            "suspects": results
+            "suspects": results,
+            "detected_faces": all_detected_faces
         }
         
         # Return JSON response with proper headers to prevent timeout issues
@@ -360,7 +371,7 @@ def process_frame(request):
         return response
         
     except Exception as e:
-        print(f"Error processing frame: {e}")
+        print(f"[ERROR] Error processing frame: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 

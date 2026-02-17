@@ -618,49 +618,47 @@ def sherlock_search_stream(request):
 
 
 # --- Holehe (Email Search) ---
-from .holehe_tool import core as holehe_core
-import trio
 
 def _holehe_stream_generator(email, result_queue):
     """Generator that yields SSE events from the queue while holehe runs in a thread."""
     def run_holehe():
         try:
-            # Import modules within the thread to avoid issues
-            modules = holehe_core.import_submodules("monitorizacao_de_redes_sociais.holehe_tool.modules")
-            
+            import trio
+            import httpx
+            from holehe.core import import_submodules, get_functions, launch_module
+
+            # Import modules from the installed holehe package
+            modules = import_submodules("holehe.modules")
+
             class MockArgs:
                 nopasswordrecovery = False
-            
-            websites = holehe_core.get_functions(modules, MockArgs())
-            
-            # Use a wrapper to push results to the queue in real-time
-            async def launch_module_wrapped(module, email, client, out, q):
-                old_len = len(out)
-                try:
-                    await holehe_core.launch_module(module, email, client, out)
-                    if len(out) > old_len:
-                        res = out[-1]
-                        if res.get("exists"):
-                            q.put({
-                                'type': 'result',
-                                'site': res.get("domain"),
-                                'url': res.get("domain") # Holehe often only gives domain
-                            })
-                except Exception:
-                    pass
+
+            websites = get_functions(modules, MockArgs())
+
+            result_queue.put({'type': 'start', 'email': email, 'total': len(websites)})
 
             async def main_holehe_async():
-                import httpx
                 client = httpx.AsyncClient(timeout=10)
                 out = []
-                result_queue.put({'type': 'start', 'email': email})
-                
+
                 async with trio.open_nursery() as nursery:
                     for website in websites:
-                        nursery.start_soon(launch_module_wrapped, website, email, client, out, result_queue)
-                
+                        nursery.start_soon(launch_module, website, email, client, out)
+
                 await client.aclose()
-                result_queue.put({'type': 'done'})
+
+                # Process all results after completion
+                for res in out:
+                    if res.get("exists"):
+                        result_queue.put({
+                            'type': 'result',
+                            'site': res.get("name", res.get("domain", "unknown")),
+                            'url': res.get("domain", ""),
+                            'emailrecovery': res.get("emailrecovery"),
+                            'phoneNumber': res.get("phoneNumber"),
+                        })
+
+                result_queue.put({'type': 'done', 'total_checked': len(out)})
                 result_queue.put(StreamingResultCollector.SENTINEL)
 
             trio.run(main_holehe_async)
@@ -695,7 +693,7 @@ def holehe_search_stream(request):
             status=400,
             content_type='application/json',
         )
-    
+
     email = body.get('email')
     if not email:
         return HttpResponse(
@@ -712,3 +710,4 @@ def holehe_search_stream(request):
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
+

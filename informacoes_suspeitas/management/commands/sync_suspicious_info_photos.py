@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Fetching suspicious information from external API...')
         
-        EXTERNAL_API_URL = 'https://api.sgcei.cacc.ao/api/v1/inteligency/actions-suspectius'
+        EXTERNAL_API_URL = 'http://10.110.2.220:3333/api/v1/inteligency/actions-suspectius'
         MEDIA_ROOT = Path(settings.MEDIA_ROOT) / 'suspicious_info_photos'
         MEDIA_ROOT.mkdir(exist_ok=True, parents=True)
 
@@ -123,7 +123,7 @@ class Command(BaseCommand):
         try:
             if image_url.startswith('/'):
                 encoded_path = urllib.parse.quote(image_url, safe='')
-                image_url = f'https://api.sgcei.cacc.ao/api/v1/files?url={encoded_path}'
+                image_url = f'http://10.110.2.220:3333/api/v1/files?url={encoded_path}'
             elif 'api.sgcei.cacc.ao/api/v1/files?url=' in image_url:
                 pass
             

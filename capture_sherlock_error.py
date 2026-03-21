@@ -1,7 +1,7 @@
 import requests
 import json
 
-url = "http://127.0.0.1:8000/monitorizacao-redes-sociais/sherlock/"
+url = "http://10.110.2.30:81/monitorizacao-redes-sociais/sherlock/"
 data = {"username": "testuser"}
 
 # Note: This might fail if auth is required, but I'll try to see if it even reaches the logic

@@ -55,11 +55,31 @@ def get_functions(modules,args=None):
         if len(module.split(".")) > 3 :
             modu = modules[module]
             site = module.split(".")[-1]
-            if args is not None and args.nopasswordrecovery==True:
-                if  "adobe" not in str(modu.__dict__[site]) and "mail_ru" not in str(modu.__dict__[site]) and "odnoklassniki" not in str(modu.__dict__[site]) and "samsung" not in str(modu.__dict__[site]):
+            
+            # Skip container modules (directories that only contain other modules)
+            # These don't have actual functions, just submodules
+            if hasattr(modu, '__path__'):
+                # This is a package (directory), skip it
+                continue
+            
+            try:
+                # Check if the site exists in the module's __dict__
+                if site not in modu.__dict__:
+                    print(f"⚠️  Warning: Module '{site}' not found in {module}, skipping...")
+                    continue
+                    
+                if args is not None and args.nopasswordrecovery==True:
+                    site_str = str(modu.__dict__[site])
+                    if  "adobe" not in site_str and "mail_ru" not in site_str and "odnoklassniki" not in site_str and "samsung" not in site_str:
+                        websites.append(modu.__dict__[site])
+                else:
                     websites.append(modu.__dict__[site])
-            else:
-                websites.append(modu.__dict__[site])
+            except KeyError as e:
+                print(f"⚠️  Warning: KeyError accessing '{site}' in module {module}: {e}")
+                continue
+            except Exception as e:
+                print(f"⚠️  Warning: Error processing module {module} (site: {site}): {e}")
+                continue
     return websites
 
 def check_update():

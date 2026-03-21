@@ -34,7 +34,7 @@ def download_image_from_url(image_url, filename, MEDIA_ROOT):
         if image_url.startswith('/'):
             # URL encode the relative path
             encoded_path = urllib.parse.quote(image_url, safe='')
-            image_url = f'https://api.sgcei.cacc.ao/api/v1/files?url={encoded_path}'
+            image_url = f'http://10.110.2.220:3333/api/v1/files?url={encoded_path}'
         # Handle the API URL format where the actual image URL is encoded
         elif 'api.sgcei.cacc.ao/api/v1/files?url=' in image_url:
             # The URL is already in the correct format, use as is
@@ -87,14 +87,14 @@ def sync_suspicious_info():
     """Sync suspicious information photos from external API to local media folder."""
     print("Fetching suspicious information from external API...")
     
-    EXTERNAL_API_URL = 'https://api.sgcei.cacc.ao/api/v1/inteligency/actions-suspectius'
+    EXTERNAL_API_URL = 'http://10.110.2.220:3333/api/v1/inteligency/actions-suspectius'
     MEDIA_ROOT = Path('media') / 'suspicious_info_photos'
     MEDIA_ROOT.mkdir(exist_ok=True, parents=True)
 
     # First, check if the API is accessible
     try:
         print("Checking API connectivity...")
-        connectivity_check = requests.get('https://api.sgcei.cacc.ao/', timeout=10)
+        connectivity_check = requests.get('http://10.110.2.220:3333/', timeout=10)
         print("API is accessible, proceeding with sync...")
     except requests.exceptions.RequestException as e:
         print(f"API is not accessible: {e}")

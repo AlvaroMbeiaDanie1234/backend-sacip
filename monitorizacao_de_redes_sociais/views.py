@@ -88,11 +88,29 @@ def sync_profile_posts(request, perfil_id):
 @api_view(['POST'])
 def scrape_profile_and_posts(request, perfil_id):
     """Complete sync of profile and posts"""
-    limit = request.data.get('limit', 10)
-    scraper_service = SocialMediaScraperService()
-    result = scraper_service.scrape_profile_and_posts(perfil_id, limit)
-    
-    return Response(result, status=status.HTTP_200_OK)
+    try:
+        limit = request.data.get('limit', 10)
+        scraper_service = SocialMediaScraperService()
+        result = scraper_service.scrape_profile_and_posts(perfil_id, limit)
+        
+        # Check if there was an error
+        if 'error' in result:
+            return Response({
+                'message': f'Scraping completed with warnings: {result.get("error", "Unknown error")}',
+                'result': result
+            }, status=status.HTTP_200_OK)
+        
+        return Response(result, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"Error during scraping: {str(e)}"
+        print(f"❌ {error_msg}")
+        traceback.print_exc()
+        return Response({
+            'error': error_msg,
+            'details': traceback.format_exc()
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -625,60 +643,93 @@ def _holehe_stream_generator(email, result_queue):
     """Generator that yields SSE events from the queue while holehe runs in a thread."""
     def run_holehe():
         try:
+            print(f"\n🔍 Starting Holehe search for: {email}")
             # Import modules within the thread to avoid issues
             modules = holehe_core.import_submodules("monitorizacao_de_redes_sociais.holehe_tool.modules")
+            print(f"📦 Imported {len(modules)} module(s)")
             
             class MockArgs:
                 nopasswordrecovery = False
             
+            print(f"⚙️  Calling get_functions to load websites...")
             websites = holehe_core.get_functions(modules, MockArgs())
+            print(f"📊 Successfully loaded {len(websites)} website(s) to check")
+            
+            # Counter for progress
+            checked_count = [0]  # Using list to allow modification in nested function
             
             # Use a wrapper to push results to the queue in real-time
             async def launch_module_wrapped(module, email, client, out, q):
-                old_len = len(out)
+                module_name = getattr(module, '__name__', 'unknown')
                 try:
+                    old_len = len(out)
                     await holehe_core.launch_module(module, email, client, out)
+                    
                     if len(out) > old_len:
                         res = out[-1]
-                        if res.get("exists"):
-                            q.put({
-                                'type': 'result',
-                                'site': res.get("domain"),
-                                'url': res.get("domain") # Holehe often only gives domain
-                            })
-                except Exception:
-                    pass
+                        domain = res.get("domain", module_name)
+                        exists = res.get("exists", False)
+                        
+                        # Send ALL results, not just existing ones
+                        q.put({
+                            'type': 'result',
+                            'site': domain,
+                            'url': domain,
+                            'exists': exists,
+                            'status': 'found' if exists else 'not_found'
+                        })
+                        
+                        status_icon = "✅" if exists else "❌"
+                        print(f"   {status_icon} Checked {domain}: {'FOUND' if exists else 'not found'}")
+                        checked_count[0] += 1
+                        
+                except Exception as e:
+                    print(f"   ⚠️  Error checking {module_name}: {str(e)}")
+                    # Still count as checked even on error
+                    checked_count[0] += 1
 
             async def main_holehe_async():
                 import httpx
                 client = httpx.AsyncClient(timeout=10)
                 out = []
                 result_queue.put({'type': 'start', 'email': email})
+                print(f"🚀 Starting async scan of {len(websites)} websites...\n")
                 
                 async with trio.open_nursery() as nursery:
-                    for website in websites:
+                    for i, website in enumerate(websites, 1):
+                        if i % 10 == 0:
+                            print(f"⏳ Progress: {i}/{len(websites)} websites queued...")
+                        # Pass result_queue as the 'q' parameter
                         nursery.start_soon(launch_module_wrapped, website, email, client, out, result_queue)
                 
                 await client.aclose()
-                result_queue.put({'type': 'done'})
+                print(f"\n✅ Holehe scan completed! Checked {checked_count[0]} websites")
+                print(f"📦 Total results to send: {len(out)}\n")
+                
+                result_queue.put({'type': 'done', 'total_checked': checked_count[0], 'total_found': len([r for r in out if r.get('exists')])})
                 result_queue.put(StreamingResultCollector.SENTINEL)
 
             trio.run(main_holehe_async)
         except Exception as e:
             import traceback
-            result_queue.put({'type': 'error', 'error': str(e), 'traceback': traceback.format_exc()})
+            error_msg = f"Holehe error: {str(e)}"
+            print(f"❌ {error_msg}")
+            traceback.print_exc()
+            result_queue.put({'type': 'error', 'error': error_msg, 'traceback': traceback.format_exc()})
             result_queue.put(StreamingResultCollector.SENTINEL)
 
     t = Thread(target=run_holehe)
     t.start()
+    print("🧵 Holehe thread started\n")
 
     while True:
         item = result_queue.get()
         if item is StreamingResultCollector.SENTINEL:
+            print("🏁 Holehe stream finished\n")
             break
         yield f"data: {json.dumps(item)}\n\n"
 
-    t.join(timeout=1)
+    t.join(timeout=5)
 
 
 @require_http_methods(["POST"])

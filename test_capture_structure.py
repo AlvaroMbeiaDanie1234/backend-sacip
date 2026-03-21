@@ -7,7 +7,7 @@ print("Testing captures endpoint for Suspect 489...")
 print("=" * 60)
 
 try:
-    response = requests.get('http://127.0.0.1:8000/api/angosite/captures/?suspect_id=489')
+    response = requests.get('http://10.110.2.30:81/api/angosite/captures/?suspect_id=489')
     print(f"Status Code: {response.status_code}")
     
     if response.status_code == 200:

@@ -5,7 +5,7 @@ This directory contains scripts for automatically syncing photos from suspicious
 ## Available Scripts
 
 ### `sync_suspicious_info_cron.py`
-This script fetches suspicious information from the external API (`https://api.sgcei.cacc.ao/api/v1/inteligency/actions-suspectius`) and downloads associated photos to the local media folder at `media/suspicious_info_photos/`.
+This script fetches suspicious information from the external API (`http://10.110.2.220:3333/api/v1/inteligency/actions-suspectius`) and downloads associated photos to the local media folder at `media/suspicious_info_photos/`.
 
 The script:
 - Fetches all suspicious information records from the external API
@@ -20,7 +20,7 @@ For detailed instructions on setting up automatic execution, see [SYNC_SUSPICIOU
 ## URL Pattern Handling
 The script properly handles the external API's URL pattern:
 - External API returns relative paths like `/410/1764538518979.jpg`
-- These are accessed through the proxy endpoint: `https://api.sgcei.cacc.ao/api/v1/files?url=%2F410%2F1764538518979.jpg`
+- These are accessed through the proxy endpoint: `http://10.110.2.220:3333/api/v1/files?url=%2F410%2F1764538518979.jpg`
 
 ## Media Storage Location
 All suspicious information photos are stored in:

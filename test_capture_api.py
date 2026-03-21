@@ -7,7 +7,7 @@ print("Testing captures endpoint for Suspect 1...")
 print("=" * 60)
 
 try:
-    response = requests.get('http://127.0.0.1:8000/api/angosite/captures/?suspect_id=1')
+    response = requests.get('http://10.110.2.30:81/api/angosite/captures/?suspect_id=1')
     print(f"Status Code: {response.status_code}")
     print(f"\nResponse:")
     if response.status_code == 200:
@@ -24,7 +24,7 @@ print("Testing sessions endpoint...")
 print("=" * 60)
 
 try:
-    response = requests.get('http://127.0.0.1:8000/api/angosite/debug/sessions/')
+    response = requests.get('http://10.110.2.30:81/api/angosite/debug/sessions/')
     print(f"Status Code: {response.status_code}")
     print(f"\nResponse:")
     if response.status_code == 200:
@@ -42,7 +42,7 @@ print("Testing all captures (no filter)...")
 print("=" * 60)
 
 try:
-    response = requests.get('http://127.0.0.1:8000/api/angosite/captures/')
+    response = requests.get('http://10.110.2.30:81/api/angosite/captures/')
     print(f"Status Code: {response.status_code}")
     print(f"\nResponse:")
     if response.status_code == 200:

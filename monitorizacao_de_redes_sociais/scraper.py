@@ -179,10 +179,21 @@ class EthicalScraper:
             # Navigate to URL
             self.webdriver.get(url)
             
+            # Check for common CMS error pages or access denied
+            page_title = self.webdriver.title.lower() if self.webdriver.title else ""
+            if any(term in page_title for term in ['access denied', '403 forbidden', '404 not found', 'captcha', 'blocked']):
+                print(f"⚠️  Blocked by CMS or anti-bot protection at {url}")
+                return None
+            
             # Wait for specific element if selector provided
             if wait_selector:
                 wait = WebDriverWait(self.webdriver, 10)
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, wait_selector)))
+                try:
+                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, wait_selector)))
+                except Exception as timeout_error:
+                    print(f"⏱️  Timeout waiting for element at {url}: {str(timeout_error)}")
+                    # Continue anyway, the element might not be critical
+                    pass
             else:
                 # Wait a bit for page to load
                 time.sleep(3)
@@ -192,7 +203,12 @@ class EthicalScraper:
             
             return page_source
         except Exception as e:
-            print(f"Error scraping with Selenium {url}: {str(e)}")
+            error_msg = str(e)
+            # Check for common CMS/anti-bot errors
+            if 'cms' in error_msg.lower() or 'cloudflare' in error_msg.lower() or 'akamai' in error_msg.lower():
+                print(f"🚫 CMS/Anti-bot protection detected at {url}: {error_msg}")
+            else:
+                print(f"❌ Error scraping with Selenium {url}: {error_msg}")
             return None
         finally:
             # Cleanup
@@ -285,21 +301,30 @@ class EthicalScraper:
             url = f'https://twitter.com/{username}'
             page_source = self.scrape_with_selenium(url, wait_selector='[data-testid="primaryColumn"]', use_proxy=True)
             
-            if page_source:
-                soup = BeautifulSoup(page_source, 'html.parser')
-                # Extract profile information using BeautifulSoup
-                name_element = soup.find('h2', {'data-testid': 'primaryColumn'})
-                bio_element = soup.find('div', {'data-testid': 'UserDescription'})
+            if not page_source:
+                print(f"⚠️  Failed to get Twitter profile page for {username}")
+                return None
                 
-                return {
-                    'nome_usuario': username,
-                    'nome_completo': name_element.get_text().strip() if name_element else username,
-                    'biografia': bio_element.get_text().strip() if bio_element else '',
-                    'url_perfil': url,
-                    'plataforma': 'twitter'
-                }
+            soup = BeautifulSoup(page_source, 'html.parser')
+            # Extract profile information using BeautifulSoup
+            name_element = soup.find('h2', {'data-testid': 'primaryColumn'})
+            bio_element = soup.find('div', {'data-testid': 'UserDescription'})
+            
+            profile_data = {
+                'nome_usuario': username,
+                'nome_completo': name_element.get_text().strip() if name_element else username,
+                'biografia': bio_element.get_text().strip() if bio_element else '',
+                'url_perfil': url,
+                'plataforma': 'twitter'
+            }
+            
+            print(f"✅ Successfully scraped Twitter profile for {username}")
+            return profile_data
+            
         except Exception as e:
-            print(f"Error scraping Twitter profile {username}: {str(e)}")
+            print(f"❌ Error scraping Twitter profile {username}: {str(e)}")
+            import traceback
+            traceback.print_exc()
         
         return None
     
@@ -310,29 +335,47 @@ class EthicalScraper:
         try:
             # Using Selenium to scrape Twitter posts
             url = f'https://twitter.com/{username}'
+            print(f"   🐦 Scraping Twitter posts from {url}...")
+            
             page_source = self.scrape_with_selenium(url, wait_selector='[data-testid="tweet"]', use_proxy=True)
             
-            if page_source:
-                soup = BeautifulSoup(page_source, 'html.parser')
-                tweet_elements = soup.find_all('article', {'data-testid': 'tweet'})
+            if not page_source:
+                print(f"   ⚠️  Failed to load Twitter page for {username}")
+                return []
+            
+            # Check if we hit rate limiting or CMS protection
+            if 'Something went wrong' in page_source or 'Rate Limit' in page_source:
+                print(f"   ⚠️  Twitter returned an error page (possible rate limit or CMS block)")
+                return []
+            
+            soup = BeautifulSoup(page_source, 'html.parser')
+            tweet_elements = soup.find_all('article', {'data-testid': 'tweet'})
+            
+            print(f"   📊 Found {len(tweet_elements)} tweets on page")
+            
+            for i, tweet_element in enumerate(tweet_elements[:limit]):
+                # Extract tweet content
+                content_element = tweet_element.find('div', {'data-testid': 'tweetText'})
+                content = content_element.get_text().strip() if content_element else ''
                 
-                for i, tweet_element in enumerate(tweet_elements[:limit]):
-                    # Extract tweet content
-                    content_element = tweet_element.find('div', {'data-testid': 'tweetText'})
-                    content = content_element.get_text().strip() if content_element else ''
-                    
+                if content:  # Only add if there's actual content
                     posts.append({
-                        'post_id': f'tweet_{i}',
+                        'post_id': f'tweet_{i}_{username}',
                         'conteudo': content,
-                        'data_postagem': datetime.now(),  # Selenium can't get exact time without more complex parsing
-                        'curtidas': 0,  # Would need more complex parsing to extract
+                        'data_postagem': datetime.now(),
+                        'curtidas': 0,
                         'comentarios': 0,
                         'compartilhamentos': 0,
                         'url_postagem': url,
                         'marcadores': '',
                     })
+            
+            print(f"   ✅ Extracted {len(posts)} posts from Twitter")
+            
         except Exception as e:
-            print(f"Error scraping Twitter posts for {username}: {str(e)}")
+            print(f"   ❌ Error scraping Twitter posts for {username}: {str(e)}")
+            import traceback
+            traceback.print_exc()
         
         return posts
     
@@ -522,18 +565,23 @@ class SocialMediaScraperService:
         """Sync profile data from social media platform"""
         try:
             perfil = PerfilRedeSocial.objects.get(id=perfil_id)
+            plataforma = perfil.plataforma
+            username = perfil.nome_usuario
             
-            if perfil.plataforma == 'twitter':
-                profile_data = self.scraper.scrape_twitter_profile(perfil.nome_usuario)
-            elif perfil.plataforma == 'instagram':
-                profile_data = self.scraper.scrape_instagram_profile(perfil.nome_usuario)
-            elif perfil.plataforma == 'facebook':
+            print(f"\n🔄 Starting profile sync for {username} on {plataforma}...")
+            
+            if plataforma == 'twitter':
+                profile_data = self.scraper.scrape_twitter_profile(username)
+            elif plataforma == 'instagram':
+                profile_data = self.scraper.scrape_instagram_profile(username)
+            elif plataforma == 'facebook':
                 # For Facebook, we could use the generic scraping approach
                 profile_data = None  # Facebook profile scraping is complex, so we'll skip it for now
-            elif perfil.plataforma == 'reddit':
-                profile_data = self.scraper.scrape_reddit_profile(perfil.nome_usuario)
+            elif plataforma == 'reddit':
+                profile_data = self.scraper.scrape_reddit_profile(username)
             else:
                 # For other platforms, we might need different approaches
+                print(f"⚠️  Unknown platform: {plataforma}")
                 profile_data = None
             
             if profile_data:
@@ -541,82 +589,181 @@ class SocialMediaScraperService:
                 perfil.biografia = profile_data.get('biografia', perfil.biografia)
                 perfil.url_perfil = profile_data.get('url_perfil', perfil.url_perfil)
                 perfil.save()
-                
+                print(f"✅ Profile synced successfully for {username}")
                 return True
-            
-            return False
+            else:
+                print(f"⚠️  No data retrieved for {username} on {plataforma}")
+                return False
+                
         except PerfilRedeSocial.DoesNotExist:
+            print(f"❌ Profile {perfil_id} not found")
             return False
         except Exception as e:
-            print(f"Error syncing profile {perfil_id}: {str(e)}")
+            print(f"❌ Error syncing profile {perfil_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def sync_profile_posts(self, perfil_id: int, limit: int = 10) -> int:
         """Sync posts from a social media profile"""
         try:
             perfil = PerfilRedeSocial.objects.get(id=perfil_id)
+            plataforma = perfil.plataforma
+            username = perfil.nome_usuario
             new_posts_count = 0
             
-            if perfil.plataforma == 'twitter':
-                posts_data = self.scraper.scrape_twitter_posts(perfil.nome_usuario, limit)
-            elif perfil.plataforma == 'instagram':
-                posts_data = self.scraper.scrape_instagram_posts(perfil.nome_usuario, limit)
-            elif perfil.plataforma == 'facebook':
+            print(f"\n📥 Starting post sync for {username} on {plataforma} (limit: {limit})...")
+            
+            if plataforma == 'twitter':
+                posts_data = self.scraper.scrape_twitter_posts(username, limit)
+            elif plataforma == 'instagram':
+                posts_data = self.scraper.scrape_instagram_posts(username, limit)
+            elif plataforma == 'facebook':
                 # For Facebook, use generic scraping as snscrape may not work well
                 posts_data = self.scraper.scrape_generic_social_content(perfil.url_perfil)
-            elif perfil.plataforma == 'reddit':
-                posts_data = self.scraper.scrape_reddit_posts(perfil.nome_usuario, limit)
+            elif plataforma == 'reddit':
+                posts_data = self.scraper.scrape_reddit_posts(username, limit)
             else:
                 # For other platforms or generic URLs
                 posts_data = self.scraper.scrape_generic_social_content(perfil.url_perfil)
             
-            for post_data in posts_data:
-                # Check if post already exists
-                post, created = Postagem.objects.get_or_create(
-                    post_id=post_data['post_id'],
-                    perfil=perfil,
-                    defaults={
-                        'conteudo': post_data['conteudo'],
-                        'data_postagem': post_data['data_postagem'],
-                        'curtidas': post_data['curtidas'],
-                        'comentarios': post_data['comentarios'],
-                        'compartilhamentos': post_data['compartilhamentos'],
-                        'url_postagem': post_data['url_postagem'],
-                        'marcadores': post_data['marcadores'],
-                    }
-                )
-                
-                if created:
-                    new_posts_count += 1
+            if not posts_data:
+                print(f"⚠️  No posts found for {username} on {plataforma}")
+                return 0
             
+            print(f"📊 Found {len(posts_data)} posts to process")
+            
+            for i, post_data in enumerate(posts_data, 1):
+                try:
+                    # Check if post already exists
+                    post, created = Postagem.objects.get_or_create(
+                        post_id=post_data['post_id'],
+                        perfil=perfil,
+                        defaults={
+                            'conteudo': post_data['conteudo'],
+                            'data_postagem': post_data['data_postagem'],
+                            'curtidas': post_data['curtidas'],
+                            'comentarios': post_data['comentarios'],
+                            'compartilhamentos': post_data['compartilhamentos'],
+                            'url_postagem': post_data['url_postagem'],
+                            'marcadores': post_data['marcadores'],
+                        }
+                    )
+                    
+                    if created:
+                        new_posts_count += 1
+                        if new_posts_count % 5 == 0:  # Log every 5 new posts
+                            print(f"   ↳ Added {new_posts_count} new posts so far...")
+                            
+                except Exception as post_error:
+                    print(f"⚠️  Error processing post {i}: {str(post_error)}")
+                    continue  # Continue with next post instead of failing completely
+            
+            print(f"✅ Successfully added {new_posts_count} new posts for {username}")
             return new_posts_count
+            
         except PerfilRedeSocial.DoesNotExist:
+            print(f"❌ Profile {perfil_id} not found")
             return 0
         except Exception as e:
-            print(f"Error syncing posts for profile {perfil_id}: {str(e)}")
+            print(f"❌ Error syncing posts for profile {perfil_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return 0
     
     def scrape_profile_and_posts(self, perfil_id: int, limit: int = 10) -> Dict[str, int]:
         """Complete sync of profile and posts"""
-        profile_synced = self.sync_profile_data(perfil_id)
-        posts_count = self.sync_profile_posts(perfil_id, limit)
+        print(f"\n{'='*60}")
+        print(f"🚀 Starting complete sync for Profile ID: {perfil_id}")
+        print(f"{'='*60}")
         
-        return {
-            'profile_synced': profile_synced,
-            'new_posts_count': posts_count
-        }
+        try:
+            # First sync profile data
+            print("\n📋 Step 1: Syncing profile data...")
+            profile_synced = self.sync_profile_data(perfil_id)
+            
+            # Then sync posts
+            print("\n📝 Step 2: Syncing posts...")
+            posts_count = self.sync_profile_posts(perfil_id, limit)
+            
+            print(f"\n{'='*60}")
+            print(f"✅ Complete sync finished for Profile ID: {perfil_id}")
+            print(f"   - Profile synced: {profile_synced}")
+            print(f"   - New posts found: {posts_count}")
+            print(f"{'='*60}\n")
+            
+            return {
+                'profile_synced': profile_synced,
+                'new_posts_count': posts_count
+            }
+            
+        except Exception as e:
+            print(f"\n❌ Critical error in complete sync for Profile ID {perfil_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Return partial results instead of failing completely
+            return {
+                'profile_synced': False,
+                'new_posts_count': 0,
+                'error': str(e)
+            }
     
     def scrape_by_platform(self, plataforma: str, limit: int = 10) -> List[Dict]:
         """Scrape multiple profiles from a specific platform"""
-        perfis = PerfilRedeSocial.objects.filter(plataforma=plataforma, ativo=True)
-        results = []
+        print(f"\n{'='*80}")
+        print(f"🌐 Starting platform-wide scan for: {plataforma.upper()}")
+        print(f"{'='*80}\n")
         
-        for perfil in perfis:
-            result = self.scrape_profile_and_posts(perfil.id, limit)
-            results.append({
-                'perfil_id': perfil.id,
-                'perfil_nome': perfil.nome_usuario,
-                'result': result
-            })
+        perfis = PerfilRedeSocial.objects.filter(plataforma=plataforma, ativo=True)
+        total_perfis = perfis.count()
+        
+        print(f"📊 Found {total_perfis} active profile(s) to scan on {plataforma}\n")
+        
+        results = []
+        success_count = 0
+        error_count = 0
+        
+        for i, perfil in enumerate(perfis, 1):
+            try:
+                print(f"\n▶️  Processing profile {i}/{total_perfis}: {perfil.nome_usuario}")
+                result = self.scrape_profile_and_posts(perfil.id, limit)
+                
+                if result.get('profile_synced') or result.get('new_posts_count', 0) > 0:
+                    success_count += 1
+                else:
+                    error_count += 1
+                
+                results.append({
+                    'perfil_id': perfil.id,
+                    'perfil_nome': perfil.nome_usuario,
+                    'result': result,
+                    'status': 'success' if (result.get('profile_synced') or result.get('new_posts_count', 0) > 0) else 'warning'
+                })
+                
+            except Exception as e:
+                error_count += 1
+                print(f"\n❌ Error processing profile {perfil.nome_usuario} (ID: {perfil.id}): {str(e)}")
+                import traceback
+                traceback.print_exc()
+                
+                # Add error result but continue with next profile
+                results.append({
+                    'perfil_id': perfil.id,
+                    'perfil_nome': perfil.nome_usuario,
+                    'result': {
+                        'profile_synced': False,
+                        'new_posts_count': 0,
+                        'error': str(e)
+                    },
+                    'status': 'error'
+                })
+                # Continue with next profile - don't let one failure stop the whole scan
+        
+        print(f"\n{'='*80}")
+        print(f"🏁 Platform scan completed for {plataforma.upper()}")
+        print(f"   ✅ Successful: {success_count}")
+        print(f"   ⚠️  With warnings: {error_count}")
+        print(f"   📊 Total processed: {len(results)}/{total_perfis}")
+        print(f"{'='*80}\n")
         
         return results

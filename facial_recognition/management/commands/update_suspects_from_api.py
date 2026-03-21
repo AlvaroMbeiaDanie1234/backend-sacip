@@ -28,7 +28,7 @@ except ImportError:
 
 # Configuration
 MODEL_NAME = 'buffalo_l'
-EXTERNAL_API_URL = 'https://api.sgcei.cacc.ao/api/v1/inteligency/actions-suspectius'
+EXTERNAL_API_URL = 'http://10.110.2.220:3333/api/v1/inteligency/actions-suspectius'
 MEDIA_ROOT = Path(settings.MEDIA_ROOT) if hasattr(settings, 'MEDIA_ROOT') else Path(__file__).parent.parent.parent.parent / 'media'
 
 # Create media directory if it doesn't exist
@@ -158,7 +158,7 @@ class Command(BaseCommand):
                     # Handle relative URLs by prepending the base API URL
                     full_photo_url = photo_url
                     if photo_url.startswith('/'):
-                        full_photo_url = f"https://api.sgcei.cacc.ao/api/v1/files?url={photo_url}"
+                        full_photo_url = f"http://10.110.2.220:3333/api/v1/files?url={photo_url}"
                     
                     photo_filename = f"suspect_{suspect_data['id']}.jpg"
                     photo_path = MEDIA_ROOT / photo_filename

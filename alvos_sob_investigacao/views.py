@@ -117,12 +117,14 @@ class FirebaseDataView(APIView):
 class AlvoInvestigacaoListCreateView(generics.ListCreateAPIView):
     queryset = AlvoInvestigacao.objects.all()
     serializer_class = AlvoInvestigacaoSerializer
+    authentication_classes = []  # Disables token check completely
     permission_classes = []  # Removed authentication requirement
 
 
 class AlvoInvestigacaoRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = AlvoInvestigacao.objects.all()
     serializer_class = AlvoInvestigacaoSerializer
+    authentication_classes = []  # Disables token check completely
     permission_classes = []  # Removed authentication requirement
 
 

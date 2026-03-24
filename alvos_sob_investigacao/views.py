@@ -289,6 +289,7 @@ from informacoes_suspeitas.models import InformacaoSuspeita
 from facial_recognition.models import Suspect
 
 class AddSuspectAsTargetView(APIView):
+    authentication_classes = []  # Disables token check completely
     permission_classes = []  # Removed authentication requirement
     
     def post(self, request):

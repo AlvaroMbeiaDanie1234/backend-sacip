@@ -17,27 +17,31 @@ class FirestoreService:
         self.project_id = FirebaseConfig.get_firestore_config()['projectId']
         self.client = self._initialize_firestore_client()
     
-    def _initialize_firestore_client(self) -> firestore.Client:
+    def _initialize_firestore_client(self) -> Optional[firestore.Client]:
         """
         Initializes the Firestore client with authentication.
         """
-        # Try to get service account key from environment
-        service_account_key = FirebaseConfig.get_service_account_key()
-        
-        if service_account_key:
-            # Use service account key for authentication
-            credentials = service_account.Credentials.from_service_account_info(
-                service_account_key
-            )
-            client = firestore.Client(
-                credentials=credentials,
-                project=self.project_id
-            )
-        else:
-            # Try to use default credentials (for deployed environments)
-            client = firestore.Client(project=self.project_id)
-        
-        return client
+        try:
+            # Try to get service account key from environment
+            service_account_key = FirebaseConfig.get_service_account_key()
+            
+            if service_account_key:
+                # Use service account key for authentication
+                credentials = service_account.Credentials.from_service_account_info(
+                    service_account_key
+                )
+                client = firestore.Client(
+                    credentials=credentials,
+                    project=self.project_id
+                )
+            else:
+                # Try to use default credentials (for deployed environments)
+                client = firestore.Client(project=self.project_id)
+            
+            return client
+        except Exception as e:
+            print(f"⚠️ Warning: Could not initialize Firestore client. Firestore features will be disabled. Error: {e}")
+            return None
     
     def get_collection(self, collection_name: str) -> List[Dict[str, Any]]:
         """
@@ -50,6 +54,10 @@ class FirestoreService:
             List of documents from the collection
         """
         try:
+            if not self.client:
+                print(f"⚠️ Warning: Firestore client not initialized. Cannot retrieve '{collection_name}'")
+                return []
+            
             collection_ref = self.client.collection(collection_name)
             docs = collection_ref.stream()
             
@@ -77,6 +85,10 @@ class FirestoreService:
             Document data or None if not found
         """
         try:
+            if not self.client:
+                print(f"⚠️ Warning: Firestore client not initialized. Cannot retrieve '{document_id}'")
+                return None
+            
             doc_ref = self.client.collection(collection_name).document(document_id)
             doc_snapshot = doc_ref.get()
             
@@ -103,6 +115,10 @@ class FirestoreService:
             List of documents matching the query
         """
         try:
+            if not self.client:
+                print(f"⚠️ Warning: Firestore client not initialized. Cannot query '{collection_name}'")
+                return []
+            
             collection_ref = self.client.collection(collection_name)
             
             # Apply filters

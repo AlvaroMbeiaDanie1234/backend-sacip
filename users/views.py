@@ -95,7 +95,8 @@ class UserListView(generics.ListCreateAPIView):
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = []  # Disables token check completely
+    permission_classes = [permissions.AllowAny]  # Removed authentication requirement
 
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -131,7 +132,8 @@ class MenuPermissionListView(generics.ListCreateAPIView):
     """
     queryset = MenuPermission.objects.all()
     serializer_class = MenuPermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = []  # Disables token check completely
+    permission_classes = [permissions.AllowAny]  # Removed authentication requirement
 
 
 class MenuPermissionDetailView(generics.RetrieveUpdateDestroyAPIView):

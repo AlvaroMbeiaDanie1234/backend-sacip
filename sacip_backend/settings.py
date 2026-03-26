@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'servico_rss',
     'facial_recognition',
     'invasao',
+    'piips_integration',
 ]
 
 # Set Google Application Credentials if the environment variable is defined

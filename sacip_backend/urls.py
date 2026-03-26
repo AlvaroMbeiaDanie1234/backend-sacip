@@ -57,6 +57,7 @@ urlpatterns = [
     path('api/rss/', include('servico_rss.urls')),
     path('api/facial-recognition/', include('facial_recognition.urls')),
     path('api/angosite/', include('invasao.urls')),
+    path('api/v1/sicgo/', include('piips_integration.urls')),
     # Swagger documentation
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

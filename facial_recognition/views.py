@@ -43,7 +43,7 @@ def initialize_face_app():
         face_app = FaceAnalysis(name=MODEL_NAME, providers=['CPUExecutionProvider'], root=Path("models"))
         face_app.prepare(ctx_id=0, det_size=(640, 640))
         face_app_initialized = True
-        print("✅ Face analysis model initialized")
+        print("Face analysis model initialized")
         
     return face_app is not None
 
@@ -97,7 +97,7 @@ def extract_faces_from_image(image_path):
         # Load image
         img = cv2.imread(image_path)
         if img is None:
-            print(f"⚠️ Could not load image: {image_path}")
+            print(f"Could not load image: {image_path}")
             return []
         
         # Convert BGR to RGB
@@ -135,7 +135,7 @@ def scan_media_directories(force_refresh=False):
         # print(f"✅ Using cached media faces ({len(MEDIA_FACES_CACHE)} faces)")
         return MEDIA_FACES_CACHE
 
-    print("🔄 Scanning media directories for faces...")
+    print("Scanning media directories for faces...")
     media_dirs = [
         "",  # Main media directory (relative to MEDIA_ROOT)
         "invasion_media",  # Invasion media directory
@@ -148,7 +148,7 @@ def scan_media_directories(force_refresh=False):
         abs_media_dir = Path(settings.MEDIA_ROOT) / media_dir
         
         if not abs_media_dir.exists():
-            print(f"⚠️ Media directory does not exist: {abs_media_dir}")
+            print(f"Media directory does not exist: {abs_media_dir}")
             continue
         
         # Supported image extensions
@@ -177,7 +177,7 @@ def scan_media_directories(force_refresh=False):
                     except Exception as e:
                         print(f"Error processing file {file_path}: {e}")
     
-    print(f"🔍 Found {len(all_face_data)} faces in media directories")
+    print(f"Found {len(all_face_data)} faces in media directories")
     MEDIA_FACES_CACHE = all_face_data
     return all_face_data
 
@@ -188,7 +188,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     
     for suspect in suspects_db:
         similarity = cosine_similarity(embedding, suspect['embedding'])
-        print(f"🔍 Comparing with {suspect['nickname']}: similarity = {similarity:.2f}")
+        print(f"Comparing with {suspect['nickname']}: similarity = {similarity:.2f}")
         
         if similarity > threshold and similarity >= min_similarity:
             results.append({
@@ -206,7 +206,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     if media_face_data:
         for face_data in media_face_data:
             similarity = cosine_similarity(embedding, face_data['embedding'])
-            print(f"🔍 Comparing with media image {face_data['id']}: similarity = {similarity:.2f}")
+            print(f"Comparing with media image {face_data['id']}: similarity = {similarity:.2f}")
             
             # Return all faces that meet the similarity threshold
             if similarity > threshold and similarity >= min_similarity:
@@ -227,7 +227,7 @@ def recognize_suspects(embedding, suspects_db, threshold=THRESHOLD, media_face_d
     
     if results:
         best_match = results[0]
-        print(f"✅ Best match: {best_match['nickname']} ({best_match['similarity']:.2f})")
+        print(f"Best match: {best_match['nickname']} ({best_match['similarity']:.2f})")
     
     return results
 
@@ -281,7 +281,7 @@ def process_frame(request):
         
         # Detect faces in the frame
         faces = face_app.get(frame)
-        print(f"🔍 Faces detected: {len(faces)}")
+        print(f"Faces detected: {len(faces)}")
         
         results = []
         for face in faces:

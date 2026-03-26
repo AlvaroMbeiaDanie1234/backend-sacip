@@ -343,7 +343,7 @@ class AddSuspectAsTargetView(APIView):
             alvo_data = {
                 'nome': full_name,
                 'apelido': nickname,
-                'cpf': suspect_nid,  # Use NID field from suspect
+                'cpf': str(suspect_nid)[:14] if suspect_nid else '',  # Truncate to max 14 characters
                 'endereco': '',  # Suspect model doesn't have address field
                 'telefone': '',  # Suspect model doesn't have phone field
                 'email': '',  # Suspect model doesn't have email field
@@ -354,7 +354,8 @@ class AddSuspectAsTargetView(APIView):
             
             # If no NID was provided, generate a default one to satisfy unique constraint
             if not suspect_nid:
-                alvo_data['cpf'] = f"DEFAULT_{str(uuid.uuid4())[:8]}"
+                alvo_data['cpf'] = f"DEFAULT_{str(uuid.uuid4()).replace('-', '')[:6]}"
+
             
             # Map dangerous_level to nivel_prioridade
             if dangerous_level:

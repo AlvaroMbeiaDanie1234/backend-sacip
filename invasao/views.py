@@ -116,10 +116,10 @@ class PublicMediaUploadView(APIView):
         serializer = CapturedMediaSerializer(data=request_data, context={'request': request})
         if serializer.is_valid():
             saved_media = serializer.save()
-            print(f"✅ SUCCESS: Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}, Geo: {saved_media.latitude}, {saved_media.longitude}")
+            print(f"SUCCESS: Saved media with ID: {saved_media.id}, Type: {saved_media.media_type}, Session ID: {saved_media.session.id}, Geo: {saved_media.latitude}, {saved_media.longitude}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            print(f"❌ ERROR: Serializer errors: {serializer.errors}")
+            print(f"ERROR: Serializer errors: {serializer.errors}")
             # Log the request data for better debugging
             print(f"   Request Data: {request.data}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

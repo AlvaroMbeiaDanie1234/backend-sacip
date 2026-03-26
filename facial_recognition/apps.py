@@ -14,10 +14,10 @@ class FacialRecognitionConfig(AppConfig):
         from .views import initialize_face_app, scan_media_directories
         
         def warmup():
-            print("🚀 Starting Facial Recognition warmup...")
+            print("Starting Facial Recognition warmup...")
             initialize_face_app()
             scan_media_directories()
-            print("✅ Facial Recognition warmup complete!")
+            print("Facial Recognition warmup complete!")
 
         # Run in a separate thread to not block startup
         thread = threading.Thread(target=warmup)

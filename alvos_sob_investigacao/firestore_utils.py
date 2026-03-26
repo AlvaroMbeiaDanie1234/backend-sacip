@@ -40,7 +40,7 @@ class FirestoreService:
             
             return client
         except Exception as e:
-            print(f"⚠️ Warning: Could not initialize Firestore client. Firestore features will be disabled. Error: {e}")
+            print(f"Warning: Could not initialize Firestore client. Firestore features will be disabled. Error: {e}")
             return None
     
     def get_collection(self, collection_name: str) -> List[Dict[str, Any]]:
@@ -55,7 +55,7 @@ class FirestoreService:
         """
         try:
             if not self.client:
-                print(f"⚠️ Warning: Firestore client not initialized. Cannot retrieve '{collection_name}'")
+                print(f"Warning: Firestore client not initialized. Cannot retrieve '{collection_name}'")
                 return []
             
             collection_ref = self.client.collection(collection_name)
@@ -70,7 +70,7 @@ class FirestoreService:
             
             return documents
         except Exception as e:
-            print(f"❌ Error retrieving collection '{collection_name}': {str(e)}")
+            print(f"Error retrieving collection '{collection_name}': {str(e)}")
             raise
     
     def get_document(self, collection_name: str, document_id: str) -> Optional[Dict[str, Any]]:
@@ -86,7 +86,7 @@ class FirestoreService:
         """
         try:
             if not self.client:
-                print(f"⚠️ Warning: Firestore client not initialized. Cannot retrieve '{document_id}'")
+                print(f"Warning: Firestore client not initialized. Cannot retrieve '{document_id}'")
                 return None
             
             doc_ref = self.client.collection(collection_name).document(document_id)
@@ -100,7 +100,7 @@ class FirestoreService:
             else:
                 return None
         except Exception as e:
-            print(f"❌ Error retrieving document '{document_id}' from collection '{collection_name}': {str(e)}")
+            print(f"Error retrieving document '{document_id}' from collection '{collection_name}': {str(e)}")
             raise
     
     def query_collection(self, collection_name: str, filters: List[tuple]) -> List[Dict[str, Any]]:
@@ -116,7 +116,7 @@ class FirestoreService:
         """
         try:
             if not self.client:
-                print(f"⚠️ Warning: Firestore client not initialized. Cannot query '{collection_name}'")
+                print(f"Warning: Firestore client not initialized. Cannot query '{collection_name}'")
                 return []
             
             collection_ref = self.client.collection(collection_name)
@@ -136,7 +136,7 @@ class FirestoreService:
             
             return documents
         except Exception as e:
-            print(f"❌ Error querying collection '{collection_name}': {str(e)}")
+            print(f"Error querying collection '{collection_name}': {str(e)}")
             raise
 
 

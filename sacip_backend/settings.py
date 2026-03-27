@@ -194,7 +194,13 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    
+    "https://10.110.2.30",
+    "http://10.110.2.30",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://10.110.2.30",
+    "http://10.110.2.30",
 ]
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -218,3 +224,6 @@ CORS_ALLOW_HEADERS = [
 
 # Increase maximum upload size for facial recognition
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Disable APPEND_SLASH to allow both /api/path and /api/path/
+APPEND_SLASH = False
